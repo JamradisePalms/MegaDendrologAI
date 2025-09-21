@@ -8,4 +8,4 @@ class PathConfig:
         class Classification:
             prompt_filepath = CLASSIFICATION_PATH / 'classification_prompt_v1.md'
         class Detection:
-            
+            pass
