@@ -1,0 +1,95 @@
+# -----------------------
+# Python cache / virtual env
+# -----------------------
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*.pyo
+*.env
+*.venv
+stockpricevenv/
+*.egg-info/
+dist/
+build/
+.eggs/
+.env
+
+# -----------------------
+# OS / editor files
+# -----------------------
+*.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.swo
+*.sublime-project
+*.sublime-workspace
+.idea/
+.vscode/
+*.code-workspace
+
+# -----------------------
+# Jupyter / notebooks
+# -----------------------
+.ipynb_checkpoints/
+/tmp.ipynb
+
+# -----------------------
+# Logs
+# -----------------------
+*.log
+logs/
+log/
+*.out
+
+# -----------------------
+# Project specific datasets / outputs
+# -----------------------
+/.stock
+config.py
+/database/
+/TrainNewsDataset/
+/train_graph_dataset/
+/final_dataset/
+/result_train_data/
+/graphsParsing/debug/data/
+data
+runs
+
+# -----------------------
+# ML / Deep Learning
+# -----------------------
+*.pt
+*.pth
+*.h5
+*.ckpt
+*.npz
+*.npy
+*.csv
+*.db
+*.tsv
+*.parquet
+*.pkl
+*.joblib
+*.sav
+*.yaml
+
+# -----------------------
+# Temporary / cache / backup
+# -----------------------
+*.tmp
+*.bak
+*.swp
+*.old
+*.orig
+*.rej
+*.~*
+*~
+.cache/
+.cache/
+tmp/
+temp/
+*.jpg
+*.png
