@@ -6,6 +6,6 @@ CLASSIFICATION_PATH = ML_PATH / 'Classification'
 class PathConfig:
     class ML:
         class Classification:
-            prompt_filepath = CLASSIFICATION_PATH / 'classification_prompt_v1.md'
+            PROMPT_FILEPATH = CLASSIFICATION_PATH / 'classification_prompt_v1.md'
         class Detection:
             pass

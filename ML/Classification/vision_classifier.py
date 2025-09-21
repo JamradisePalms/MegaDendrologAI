@@ -5,6 +5,8 @@ import mimetypes
 from pathlib import Path
 from abc import ABC, abstractmethod
 from typing import Tuple
+from configs.paths import PathConfig
+PROMPT_FILEPATH = PathConfig.ML.Classification.PROMPT_FILEPATH
 
 SOY_TOKEN = os.environ.get("SOY_TOKEN")
 if not SOY_TOKEN:
@@ -31,7 +33,7 @@ class BaseClassifier(ABC):
 
 class GptClassifier(BaseClassifier):
     def __init__(self, prompt_path: Path):
-        self.prompt_path = prompt_path
+        self.prompt_path = PROMPT_FILEPATH
 
     def single_request(self, image_path: Path) -> str:
         url = "https://api.eliza.yandex.net/openai/v1/chat/completions"
