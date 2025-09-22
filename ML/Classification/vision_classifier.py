@@ -8,13 +8,15 @@ from typing import Iterable, Tuple, List, Union, Dict, Any, Iterable
 from configs.paths import PathConfig
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from tqdm import tqdm
-from ML.Classification.utils import parse_json_string
+from ML.Classification.utils import parse_json_string, write_json
 import urllib3
 from urllib3.exceptions import InsecureRequestWarning
 urllib3.disable_warnings(InsecureRequestWarning)
+CLASSIFICATION_PATHS = PathConfig.ML.Classification
 
-PROMPT_FILEPATH = PathConfig.ML.Classification.PROMPT_FILEPATH
-
+PROMPT_FILEPATH = CLASSIFICATION_PATHS.PROMPT_FILEPATH
+PATH_TO_TEST_IMAGES = CLASSIFICATION_PATHS.PATH_TO_TEST_IMAGES
+PATH_TO_SAVE_DATASET = CLASSIFICATION_PATHS.PATH_TO_SAVE_DATASET
 
 SOY_TOKEN = os.environ.get("SOY_TOKEN")
 if not SOY_TOKEN:
@@ -44,14 +46,15 @@ class BaseClassifier(ABC):
 class GptClassifier(BaseClassifier):
     def __init__(self):
         self.prompt_path = PROMPT_FILEPATH
+        with open(self.prompt_path, "r", encoding="Utf-8") as f:
+            message = f.read()
+        self.prompt = message
 
     def _single_request(self, image_path: Path) -> str:
         url = "https://api.eliza.yandex.net/openai/v1/chat/completions"
         model_name = "gpt-5"
-        with open(self.prompt_path, "r", encoding="Utf-8") as f:
-            message = f.read()
-
-        user_content = [{"type": "text", "text": message}]
+    
+        user_content = [{"type": "text", "text": self.prompt}]
 
         if image_path:
             base64_image, mime_type = self._encode_image(image_path)
@@ -83,20 +86,26 @@ class GptClassifier(BaseClassifier):
 
         results = []
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            api_requests = [
-                executor.submit(self._single_request, image_path)
+            api_requests = {
+                executor.submit(self._single_request, image_path): image_path
                 for image_path in images
-            ]
+            }
             api_requests_in_process = tqdm(as_completed(api_requests), total=len(api_requests))
             for response in api_requests_in_process:
-                parsed_respose = parse_json_string(response.result())
-                results.append(parsed_respose)
+                image_path = api_requests[response]
+                parsed_response = parse_json_string(response.result())
+                parsed_response.update({'image': image_path})
+
+                results.append(parsed_response)
 
         return results
 
 if __name__ == "__main__":
     classifier = GptClassifier()
-    images = Path("ML/Classification/images").iterdir()
+
+    images = PATH_TO_TEST_IMAGES.iterdir()
+    path_to_save_json = PATH_TO_SAVE_DATASET
+
     response = classifier.run(images)
 
-    print(response)
+    write_json(response, path_to_save_json)

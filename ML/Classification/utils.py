@@ -1,4 +1,6 @@
 import json
+from pathlib import Path
+from typing import Union, Any, List, Dict
 
 def parse_json_string(json_string: str) -> dict:
     """
@@ -17,3 +19,22 @@ def parse_json_string(json_string: str) -> dict:
 
     parsed_json = json.loads(json_string)
     return parsed_json
+
+
+def write_json(
+    obj_to_save: Union[Dict[str, Any], List[Dict[str, Any]], Any],
+    path_where_to_save_json: Path
+) -> None:
+    """
+    Save a dictionary or list of dictionaries as a JSON file.
+
+    Args:
+        obj_to_save (dict | list[dict] | Any): The dictionary or list of dictionaries to be saved as JSON.
+        path_where_to_save_json (str, optional): The file path where the JSON will be saved.
+            Defaults to 'LLM_responses/NewFeatures/features.json'.
+
+    Returns:
+        None
+    """
+    with open(path_where_to_save_json, 'w') as f:
+        json.dump(obj_to_save, f, indent=4)

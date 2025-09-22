@@ -25,6 +25,8 @@ class PathConfig:
     class ML:
         class Classification:
             PROMPT_FILEPATH = CLASSIFICATION_DIR / 'classification_prompt_v1.md'
+            PATH_TO_TEST_IMAGES = CLASSIFICATION_DIR / 'images'
+            PATH_TO_SAVE_DATASET = CLASSIFICATION_DIR / 'result'
         class Detection:
             PATH_TO_SAVE_DATASET = DETECTION_DATASET_DIR
             PATH_TO_SAVE_TRAIN_RUNS = YOLO_RUNS_DIR
