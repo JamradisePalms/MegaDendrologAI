@@ -101,6 +101,7 @@ config.py
 /result_train_data/
 /graphsParsing/debug/data/
 data
+Data
 runs
 Tree-Quality-3-7
 

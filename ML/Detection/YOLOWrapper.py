@@ -3,11 +3,16 @@ import yaml
 from pathlib import Path
 import torch
 from datetime import datetime
+from configs.paths import PathConfig
+from ML.Detection.utils import create_default_config
+
+PATH_TO_SAVE_TRAIN_RUNS = PathConfig.ML.Detection.PATH_TO_SAVE_TRAIN_RUNS
+PATH_TO_YOLO_CONFIG_YAML = PathConfig.ML.Detection.PATH_TO_YOLO_CONFIG
 
 class YOLOWrapper:
-    def __init__(self, model_version: str = 'v11', model_size: str = 'n', finetune: bool = True, device=None, weights_path: str = None):
+    def __init__(self, model_version: str = '11', model_size: str = 'n', finetune: bool = True, device=None, weights_path: str = None):
         """
-        model_version: версия YOLO (например, 'v11')
+        model_version: версия YOLO (например, '11')
         model_size: размер модели ('n', 's', 'm', 'l', 'x')
         finetune: True - использовать .pt для дообучения, False - .yaml для обучения с нуля
         device: GPU id (0,1,..) или 'cpu', None - автоматический выбор
@@ -18,16 +23,20 @@ class YOLOWrapper:
         if weights_path:
             self.model = ultralytics.YOLO(weights_path)
         else:
-            model_file = f"{model_version}{model_size}.pt" if finetune else f"{model_version}{model_size}.yaml"
+            model_file = "yolo" + f"{model_version}{model_size}.pt" if finetune else f"{model_version}{model_size}.yaml"
             self.model = ultralytics.YOLO(model_file)
 
-    def train(self, config_path: str = None, save_dir: str = "runs/train", **kwargs):
+    def train(self, config_path: str = None, save_dir: str = PATH_TO_SAVE_TRAIN_RUNS, **kwargs):
         """
         Обучение модели.
         - config_path: путь к YAML конфигу с гиперпараметрами
         - save_dir: папка для сохранения результатов (веса, графики, конфиг)
         - kwargs: любые параметры, которые перекрывают YAML конфиг
         """
+
+        print(f"Starting training on device: {self.device}")
+        print(f"Save directory: {save_dir}")
+
         config = {}
         if config_path:
             with open(config_path, "r") as f:
@@ -71,51 +80,6 @@ class YOLOWrapper:
                 res.print()
         return results
 
-    @staticmethod
-    def create_default_config(path="yolo_config.yaml"):
-        """
-        Создаёт YAML конфиг с базовыми параметрами обучения.
-        """
-        default_config = {
-            "data": "data.yaml",
-            "epochs": 100,
-            "imgsz": 640,
-            "batch": 16,
-            "device": None,
-            "workers": 8,
-            "optimizer": "SGD",
-            "lr0": 0.01,
-            "lrf": 0.01,
-            "momentum": 0.937,
-            "weight_decay": 0.0005,
-            "warmup_epochs": 3.0,
-            "patience": 50,
-            "resume": False,
-            "freeze": 0,
-            "pretrained": True,
-            "save": True,
-            "save_period": -1,
-            "verbose": True,
-            "plots": True,
-            "project": "runs/train",
-            "name": None,
-            "exist_ok": False,
-            "cache": False,
-            "rect": False,
-            "cos_lr": False,
-            "close_mosaic": 10,
-            "amp": True
-        }
-        with open(path, "w") as f:
-            yaml.dump(default_config, f)
-        print(f"Default config saved to {path}")
-
 if __name__ == "__main__":
-    YOLOWrapper.create_default_config("my_yolo_config.yaml")
-
-    wrapper = YOLOWrapper(model_version="v11", model_size="n", finetune=True)
-    # wrapper.train(config_path="my_yolo_config.yaml", epochs=50, batch=32)
-
-    # finetuned = YOLOWrapper(weights_path="runs/train/20250921_123456/weights/best.pt")
-
-    results = wrapper.predict(r"C:\Users\shari\PycharmProjects\MegaDendrologAI\ML\Detection\data", conf=0.3, save=True)
+    create_default_config()
+    
