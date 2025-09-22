@@ -14,9 +14,11 @@ from urllib3.exceptions import InsecureRequestWarning
 urllib3.disable_warnings(InsecureRequestWarning)
 CLASSIFICATION_PATHS = PathConfig.ML.Classification
 
-PROMPT_FILEPATH = CLASSIFICATION_PATHS.PROMPT_FILEPATH
+CLASSIFICATION_PROMPT_FILEPATH = CLASSIFICATION_PATHS.CLASSIFICATION_PROMPT_FILEPATH
+TREE_TYPE_PROMPT_FILEPATH = CLASSIFICATION_PATHS.TREE_TYPE_PROMPT_FILEPATH
 PATH_TO_TEST_IMAGES = CLASSIFICATION_PATHS.PATH_TO_TEST_IMAGES
 PATH_TO_SAVE_DATASET = CLASSIFICATION_PATHS.PATH_TO_SAVE_DATASET
+
 
 SOY_TOKEN = os.environ.get("SOY_TOKEN")
 if not SOY_TOKEN:
@@ -44,8 +46,8 @@ class BaseClassifier(ABC):
 
 
 class GptClassifier(BaseClassifier):
-    def __init__(self):
-        self.prompt_path = PROMPT_FILEPATH
+    def __init__(self, prompt_path: Path):
+        self.prompt_path = prompt_path
         with open(self.prompt_path, "r", encoding="Utf-8") as f:
             message = f.read()
         self.prompt = message
@@ -101,11 +103,7 @@ class GptClassifier(BaseClassifier):
         return results
 
 if __name__ == "__main__":
-    classifier = GptClassifier()
-
-    images = PATH_TO_TEST_IMAGES.iterdir()
-    path_to_save_json = PATH_TO_SAVE_DATASET
-
-    response = classifier.run(images)
-
-    write_json(response, path_to_save_json)
+    # classifier = GptClassifier(CLASSIFICATION_PROMPT_FILEPATH)
+    classifier = GptClassifier(TREE_TYPE_PROMPT_FILEPATH)
+    response = classifier.run(PATH_TO_TEST_IMAGES.iterdir())
+    write_json(response, PATH_TO_SAVE_DATASET)
