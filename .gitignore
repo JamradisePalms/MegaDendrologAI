@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Miscellaneous
 *.class
 *.log
@@ -44,7 +43,6 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
-=======
 # -----------------------
 # Python cache / virtual env
 # -----------------------
@@ -141,4 +139,3 @@ tmp/
 temp/
 *.jpg
 *.png
->>>>>>> 999d7ad044f9da125403ee073965bcb74b745fe8
