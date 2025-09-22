@@ -24,7 +24,8 @@ for path in paths:
 class PathConfig:
     class ML:
         class Classification:
-            PROMPT_FILEPATH = CLASSIFICATION_DIR / 'classification_prompt_v1.md'
+            CLASSIFICATION_PROMPT_FILEPATH = CLASSIFICATION_DIR / 'classification_prompt_v1.md'
+            TREE_TYPE_PROMPT_FILEPATH = CLASSIFICATION_DIR / 'tree_type.md'
             PATH_TO_TEST_IMAGES = CLASSIFICATION_DIR / 'images'
             PATH_TO_SAVE_DATASET = CLASSIFICATION_DIR / 'result'
         class Detection:
