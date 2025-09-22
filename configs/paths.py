@@ -1,7 +1,7 @@
 from pathlib import Path
 import os
 
-ROOT_PATH: Path = Path(__file__).resolve().parent().parent()
+ROOT_PATH: Path = Path(__file__).resolve().parent.parent
 ML_DIR = ROOT_PATH / 'ML'
 CLASSIFICATION_DIR = ML_DIR / 'Classification'
 DETECTION_DIR = ML_DIR / 'Detection'

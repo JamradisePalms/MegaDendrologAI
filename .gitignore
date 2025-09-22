@@ -58,6 +58,7 @@ config.py
 data
 runs
 Tree-Quality-3-7
+images
 
 # -----------------------
 # ML / Deep Learning
