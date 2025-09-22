@@ -36,5 +36,5 @@ def write_json(
     Returns:
         None
     """
-    with open(path_where_to_save_json, 'w') as f:
-        json.dump(obj_to_save, f, indent=4)
+    with open(path_where_to_save_json, 'w', encoding='Utf-8') as f:
+        json.dump(obj_to_save, f, indent=4, ensure_ascii=False)

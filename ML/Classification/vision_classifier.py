@@ -14,10 +14,16 @@ from urllib3.exceptions import InsecureRequestWarning
 urllib3.disable_warnings(InsecureRequestWarning)
 CLASSIFICATION_PATHS = PathConfig.ML.Classification
 
+# prompt filepaths
 CLASSIFICATION_PROMPT_FILEPATH = CLASSIFICATION_PATHS.CLASSIFICATION_PROMPT_FILEPATH
 TREE_TYPE_PROMPT_FILEPATH = CLASSIFICATION_PATHS.TREE_TYPE_PROMPT_FILEPATH
+
+# path to images to post to VLM
 PATH_TO_TEST_IMAGES = CLASSIFICATION_PATHS.PATH_TO_TEST_IMAGES
-PATH_TO_SAVE_DATASET = CLASSIFICATION_PATHS.PATH_TO_SAVE_DATASET
+
+# json filepaths where to save results
+TREE_TYPE_DATASET_FILEPATH = CLASSIFICATION_PATHS.TREE_TYPE_DATASET_FILEPATH
+CLASSIFICATION_DATASET_FILEPATH = CLASSIFICATION_PATHS.CLASSIFICATION_DATASET_FILEPATH
 
 
 SOY_TOKEN = os.environ.get("SOY_TOKEN")
@@ -95,15 +101,20 @@ class GptClassifier(BaseClassifier):
             api_requests_in_process = tqdm(as_completed(api_requests), total=len(api_requests))
             for response in api_requests_in_process:
                 image_path = api_requests[response]
-                parsed_response = parse_json_string(response.result())
-                parsed_response.update({'image': image_path})
-
+                try:
+                    parsed_response = parse_json_string(response.result())
+                except:
+                    continue   
+                parsed_response.update({'image': str(image_path)})
                 results.append(parsed_response)
 
         return results
 
 if __name__ == "__main__":
-    # classifier = GptClassifier(CLASSIFICATION_PROMPT_FILEPATH)
-    classifier = GptClassifier(TREE_TYPE_PROMPT_FILEPATH)
-    response = classifier.run(PATH_TO_TEST_IMAGES.iterdir())
-    write_json(response, PATH_TO_SAVE_DATASET)
+    classifier = GptClassifier(CLASSIFICATION_PROMPT_FILEPATH)
+    # classifier = GptClassifier(TREE_TYPE_PROMPT_FILEPATH)
+
+    response = classifier.run(list(PATH_TO_TEST_IMAGES.iterdir()))
+
+    write_json(response, CLASSIFICATION_DATASET_FILEPATH)
+    # write_json(response, TREE_TYPE_DATASET_FILEPATH)

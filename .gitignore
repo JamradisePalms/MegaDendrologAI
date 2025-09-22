@@ -105,6 +105,8 @@ Data
 runs
 Tree-Quality-3-7
 yolo_train
+tree_types.json
+classification_result.json
 
 # -----------------------
 # ML / Deep Learning
