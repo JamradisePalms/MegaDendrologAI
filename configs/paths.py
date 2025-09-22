@@ -29,4 +29,6 @@ class PathConfig:
             PATH_TO_SAVE_DATASET = DETECTION_DATASET_DIR
             PATH_TO_SAVE_TRAIN_RUNS = YOLO_RUNS_DIR
             PATH_TO_YOLO_CONFIG = PATH_TO_YOLO_CONFIG_YAML
-            
+            PATH_TO_SAVE_PROCESSED_IMAGES = DETECTION_DATASET_DIR / "ProcessedData"
+        
+        PATH_TO_RAW_IMAGES = ML_DIR / "Data"
