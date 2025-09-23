@@ -7,9 +7,11 @@ from PIL import Image
 import shutil
 from tqdm import tqdm
 
-from ML.Detection.YOLOWrapper import YOLOWrapper
+from ML.Detection.YOLOWrapper import YoloWrapper
 from ML.Classification.vision_classifier import GptClassifier
 from configs.paths import PathConfig
+
+PATH_TO_SAVE_PROCESSED_IMAGES  = PathConfig.ML.PATH_TO_SAVE_PROCESSED_IMAGES
 
 class DatasetLabeler:
     def __init__(self, yolo_weights_path: str, output_dir: Path = None):
@@ -20,10 +22,10 @@ class DatasetLabeler:
             yolo_weights_path: путь к обученным весам YOLO
             output_dir: директория для сохранения результатов
         """
-        self.yolo = YOLOWrapper(weights_path=yolo_weights_path)
+        self.yolo = YoloWrapper(weights_path=yolo_weights_path)
         self.classifier = GptClassifier()
         
-        self.output_dir = output_dir or PathConfig.ML.Detection.PATH_TO_SAVE_PROCESSED_IMAGES
+        self.output_dir = output_dir or PathConfig.ML.PATH_TO_SAVE_PROCESSED_IMAGES
         self.output_dir.mkdir(parents=True, exist_ok=True)
         
         self.crops_dir = self.output_dir / "tree_crops"
@@ -62,12 +64,16 @@ class DatasetLabeler:
                 print(f"Warning: {image_path} не существует")
                 continue
             
-            results = self.yolo.predict(
-                source=str(image_path),
-                conf=confidence_threshold,
-                save=False,
-                verbose=False
-            )
+            try:
+                results = self.yolo.predict(
+                    source=str(image_path),
+                    conf=confidence_threshold,
+                    save=False,
+                    verbose=False
+                )
+            except Exception as e:
+                print(f"Skiped image {image_path} because of {e}")
+                continue
             
             if not results:
                 detection_metadata["detections_per_image"][image_path.name] = 0
@@ -274,15 +280,15 @@ class DatasetLabeler:
 if __name__ == "__main__":
     # TODO: need debugging 
     
-    PATH_TO_YOLO_WEIGHTS = PathConfig.ML.Detection.PATH_TO_SAVE_TRAIN_RUNS / "runs/train/YOUR_EXP_NAME/weights/best.pt"
+    PATH_TO_YOLO_WEIGHTS = "/home/jamradise/MegaDendrologAI/ML/Detection/yolo_train/runs/train/20250922_185054/weights/best.pt"
     IMAGE_DIRECTORY = PathConfig.ML.PATH_TO_RAW_IMAGES
     
     labeler = DatasetLabeler(yolo_weights_path=str(PATH_TO_YOLO_WEIGHTS))
     
-    results = labeler.run_full_pipeline(image_directory=IMAGE_DIRECTORY)
+    # results = labeler.run_full_pipeline(image_directory=IMAGE_DIRECTORY)
     
     # 1. Только детекция
-    # detection_results = labeler.detect_and_crop_trees(list(IMAGE_DIRECTORY.glob("*.jpg")))
+    detection_results = labeler.detect_and_crop_trees(list(IMAGE_DIRECTORY.glob("*.jpg")))
     
     # 2. Только классификация
     # classification_results = labeler.classify_tree_crops()

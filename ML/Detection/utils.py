@@ -1,5 +1,6 @@
 import yaml
 from configs.paths import PathConfig
+import numpy as np
 import os
 
 PATH_TO_YOLO_CONFIG_YAML = PathConfig.ML.Detection.PATH_TO_YOLO_CONFIG
