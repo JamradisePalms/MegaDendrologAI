@@ -9,6 +9,7 @@ DETECTION_DATASET_DIR = DETECTION_DIR / 'Data'
 YOLO_RUNS_DIR = DETECTION_DIR / 'yolo_train'
 PATH_TO_YOLO_CONFIG_YAML = YOLO_RUNS_DIR / 'yolo_config.yaml'
 CLASSIFICATION_RESULT_DIR = CLASSIFICATION_DIR / 'result'
+CLASSIFICATION_PROMPTS_DIR = CLASSIFICATION_DIR / 'prompts'
 
 paths = [
     ROOT_PATH,
@@ -17,7 +18,8 @@ paths = [
     DETECTION_DIR,
     DETECTION_DATASET_DIR,
     YOLO_RUNS_DIR,
-    CLASSIFICATION_RESULT_DIR
+    CLASSIFICATION_RESULT_DIR,
+    CLASSIFICATION_PROMPTS_DIR
 ]
 
 for path in paths:
@@ -26,8 +28,8 @@ for path in paths:
 class PathConfig:
     class ML:
         class Classification:
-            CLASSIFICATION_PROMPT_FILEPATH = CLASSIFICATION_DIR / 'classification_prompt_v1.md'
-            TREE_TYPE_PROMPT_FILEPATH = CLASSIFICATION_DIR / 'tree_type.md'
+            CLASSIFICATION_PROMPT_FILEPATH = CLASSIFICATION_PROMPTS_DIR / 'classification_prompt_v1.md'
+            TREE_TYPE_PROMPT_FILEPATH = CLASSIFICATION_PROMPTS_DIR / 'tree_type.md'
             PATH_TO_TEST_IMAGES = CLASSIFICATION_DIR / 'images'
             TREE_TYPE_DATASET_FILEPATH = CLASSIFICATION_RESULT_DIR / 'tree_types.json'
             CLASSIFICATION_DATASET_FILEPATH = CLASSIFICATION_RESULT_DIR / 'classification_result.json'
