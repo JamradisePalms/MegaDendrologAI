@@ -1,0 +1,37 @@
+<div class="consultant" id="consultant">
+    <div class="consultant-toggle" onclick="toggleConsultant()">
+        <i class="fas fa-comments"></i>
+        <div class="consultant-badge">Иван</div>
+    </div>
+    
+    <div class="consultant-chat" id="consultant-chat">
+        <div class="chat-header">
+            <div class="consultant-avatar">
+                <i class="fas fa-user"></i>
+            </div>
+            <div class="consultant-info">
+                <h4>Иван</h4>
+                <span class="status online">онлайн</span>
+            </div>
+            <button class="chat-close" onclick="toggleConsultant()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="chat-messages" id="chat-messages">
+            <div class="message consultant-message">
+                <div class="message-content">
+                    Привет! Я Иван, ваш консультант по вопросам деревьев и леса. Чем могу помочь?
+                </div>
+                <div class="message-time">12:00</div>
+            </div>
+        </div>
+        
+        <div class="chat-input">
+            <input type="text" id="message-input" placeholder="Напишите ваш вопрос...">
+            <button onclick="sendMessage()">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
+</div>

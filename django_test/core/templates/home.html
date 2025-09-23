@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Home Page -->
+<div id="home-page" class="page active">
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1 class="hero-title">Добро пожаловать в мир леса</h1>
+            <p class="hero-subtitle">Откройте для себя красоту деревьев и природы</p>
+            <button class="btn-primary" onclick="showUploadPage()">
+                <i class="fas fa-camera"></i>
+                Поделиться фото
+            </button>
+        </div>
+        <div class="hero-background"></div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features">
+        <div class="container">
+            <h2>Наши возможности</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <i class="fas fa-seedling"></i>
+                    <h3>Изучение видов</h3>
+                    <p>Узнайте больше о различных видах деревьев и их особенностях</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-camera-retro"></i>
+                    <h3>Фотогалерея</h3>
+                    <p>Загружайте и делитесь своими фотографиями деревьев</p>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-leaf"></i>
+                    <h3>Экология</h3>
+                    <p>Изучайте роль деревьев в экосистеме нашей планеты</p>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}
