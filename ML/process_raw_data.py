@@ -8,7 +8,7 @@ import shutil
 from tqdm import tqdm
 
 from ML.Detection.YOLOWrapper import YoloWrapper
-from ML.Classification.vision_classifier import GptClassifier
+from ML.Classification.vlm_lib.GptImageClassifier import GptImageClassifier
 from configs.paths import PathConfig
 
 PATH_TO_SAVE_PROCESSED_IMAGES  = PathConfig.ML.PATH_TO_SAVE_PROCESSED_IMAGES
@@ -23,7 +23,7 @@ class DatasetLabeler:
             output_dir: директория для сохранения результатов
         """
         self.yolo = YoloWrapper(weights_path=yolo_weights_path)
-        self.classifier = GptClassifier()
+        self.classifier = GptImageClassifier()
         
         self.output_dir = output_dir or PathConfig.ML.PATH_TO_SAVE_PROCESSED_IMAGES
         self.output_dir.mkdir(parents=True, exist_ok=True)
