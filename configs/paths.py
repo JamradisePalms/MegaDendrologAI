@@ -42,6 +42,7 @@ class PathConfig:
             PATH_TO_SAVE_DATASET = DETECTION_DATASET_DIR
             PATH_TO_SAVE_TRAIN_RUNS = YOLO_RUNS_DIR
             PATH_TO_YOLO_CONFIG = PATH_TO_YOLO_CONFIG_YAML
+            PATH_TO_BEST_YOLO_WEIGHTS = Path("/home/jamradise/MegaDendrologAI/ML/Detection/yolo_train/runs/train/20250923_195225/weights/best.pt")
 
         PATH_TO_RAW_IMAGES = DETECTION_DATASET_DIR / "Hack-raw-data"
         PATH_TO_SAVE_PROCESSED_IMAGES = DETECTION_DATASET_DIR / "Hack-processed-data"
