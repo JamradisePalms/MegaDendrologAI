@@ -5,6 +5,10 @@ import torch
 from datetime import datetime
 from configs.paths import PathConfig
 from ML.Detection.utils import create_default_config
+from ML.logging_config import setup_logging
+import logging
+
+logger = logging.getLogger(__name__)
 
 PATH_TO_SAVE_TRAIN_RUNS = PathConfig.ML.Detection.PATH_TO_SAVE_TRAIN_RUNS
 PATH_TO_YOLO_CONFIG_YAML = PathConfig.ML.Detection.PATH_TO_YOLO_CONFIG
@@ -21,9 +25,17 @@ class YoloWrapper:
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
         
         if weights_path:
+            logger.info("Loading weights for YOLO from %r", weights_path)
+
             self.model = ultralytics.YOLO(weights_path)
         else:
-            model_file = "yolo" + f"{model_version}{model_size}.pt" if finetune else f"{model_version}{model_size}.yaml"
+            if finetune:
+                model_file = "yolo" + f"{model_version}{model_size}.pt"
+                logger.info("Loading trained %s on COCO dataset", model_file)
+            else:
+                model_file = f"{model_version}{model_size}.yaml"
+                logger.info("Loading random initialized %s", model_file)
+
             self.model = ultralytics.YOLO(model_file)
 
     def train(self, config_path: str = None, save_dir: str = PATH_TO_SAVE_TRAIN_RUNS, **kwargs):
@@ -33,9 +45,7 @@ class YoloWrapper:
         - save_dir: папка для сохранения результатов (веса, графики, конфиг)
         - kwargs: любые параметры, которые перекрывают YAML конфиг
         """
-
-        print(f"Starting training on device: {self.device}")
-        print(f"Save directory: {save_dir}")
+        logger.info("Starting training on device: %r, save directory: %r", self.device, save_dir)
 
         config = {}
         if config_path:
@@ -57,11 +67,18 @@ class YoloWrapper:
         with open(config_save_path, "w") as f:
             yaml.dump(config, f)
 
-        self.model.train(**config)
+        logger.debug("Full training config: %s", config)
+        logger.info("Config saved to %r", config_save_path)
 
-        print(f"\n Training finished. Weights saved in {exp_path / 'weights'}")
+        try:
+            self.model.train(**config)
+        except Exception:
+            logger.exception("YOLO train failed", exc_info=True)
+            return None
 
-    def predict(self, source, conf=0.01, imgsz=640, iou=0.25, save=False, save_dir="runs/predict", verbose=True):
+        logger.info("Training finished. Weights saved in %s", exp_path / "weights")
+
+    def predict(self, source, conf=0.01, imgsz=640, iou=0.25, save=False, save_dir="runs/predict"):
         """
         source: путь к изображению/папке/видео/стриму
         conf: confidence threshold
@@ -69,19 +86,21 @@ class YoloWrapper:
         save: сохранять ли результаты
         save_dir: папка для сохранения
         """
-        results = self.model.predict(source=source, conf=conf, imgsz=imgsz, iou=iou)
+        try:
+            results = self.model.predict(source=source, conf=conf, imgsz=imgsz, iou=iou)
+        except Exception:
+            logger.exception(f"Failed to process data from {source}", exc_info=True)
+            return None
 
         if save:
             save_path = Path(save_dir)
             save_path.mkdir(parents=True, exist_ok=True)
             for i, res in enumerate(results):
                 res.save(save_dir=save_path)
-
-        if verbose:
-            for res in results:
-                res.print()
+            logger.info(f"Detection results saved to {save_path}")
         return results
 
 if __name__ == "__main__":
+    setup_logging()
     create_default_config()
     
