@@ -38,7 +38,8 @@ class DatasetLabeler:
     def detect_and_crop_trees(self, 
                             image_paths: List[Path], 
                             confidence_threshold: float = 0.3,
-                            save_visualization: bool = True) -> Dict[str, Any]:
+                            save_visualization: bool = True,
+                            imgsz: int = 640) -> Dict[str, Any]:
         """
         Детекция деревьев и вырезание регионов
         
@@ -69,7 +70,8 @@ class DatasetLabeler:
                     source=str(image_path),
                     conf=confidence_threshold,
                     save=False,
-                    verbose=False
+                    verbose=False,
+                    imgsz=imgsz,
                 )
             except Exception as e:
                 print(f"Skiped image {image_path} because of {e}")
@@ -280,7 +282,7 @@ class DatasetLabeler:
 if __name__ == "__main__":
     # TODO: need debugging 
     
-    PATH_TO_YOLO_WEIGHTS = "/home/jamradise/MegaDendrologAI/ML/Detection/yolo_train/runs/train/20250922_185054/weights/best.pt"
+    PATH_TO_YOLO_WEIGHTS = "/home/jamradise/MegaDendrologAI/ML/Detection/yolo_train/runs/train/20250923_195225/weights/best.pt"
     IMAGE_DIRECTORY = PathConfig.ML.PATH_TO_RAW_IMAGES
     
     labeler = DatasetLabeler(yolo_weights_path=str(PATH_TO_YOLO_WEIGHTS))
