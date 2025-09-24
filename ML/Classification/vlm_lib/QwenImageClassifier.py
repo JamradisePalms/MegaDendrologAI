@@ -1,4 +1,5 @@
 import json
+from typing import Iterable, Union
 from qwen_api import Qwen
 from qwen_api.core.exceptions import QwenAPIError
 from qwen_api.core.types.chat import ChatMessage, TextBlock, ImageBlock
@@ -30,24 +31,38 @@ class QwenImageClassifier(BaseClassifier):
     def __init__(self, prompt_path):
         super().__init__(prompt_path)
 
-    def _single_request(self, image_path: Path) -> TreeAnalysis:
+    def _single_request(self, image_path: Union[Path, Iterable[Path]]) -> TreeAnalysis:
         client = Qwen()
         try:
-            getdataImage = client.chat.upload_file(file_path=str(image_path))
-
+            
+            blocks = [
+                TextBlock(block_type='text', text=self.prompt)
+            ]
+            if isinstance(image_path, Iterable):
+                for image in image_path:
+                    getdataImage = client.chat.upload_file(file_path=str(image))
+                    blocks.append(
+                        ImageBlock(
+                            block_type='image',
+                            url=getdataImage.file_url,
+                            image_mimetype=getdataImage.image_mimetype
+                        )
+                    )
+            else:
+                getdataImage = client.chat.upload_file(file_path=str(image_path))
+                blocks.append(
+                    ImageBlock(
+                        block_type='image',
+                        url=getdataImage.file_url,
+                        image_mimetype=getdataImage.image_mimetype
+                    )
+                )
             messages = [
                 ChatMessage(
                     role="user",
                     web_search=False,
                     thinking=True,
-                    blocks=[
-                        TextBlock(block_type="text", text=self.prompt),
-                        ImageBlock(
-                            block_type="image",
-                            url=getdataImage.file_url,
-                            image_mimetype=getdataImage.image_mimetype,
-                        ),
-                    ],
+                    blocks=blocks,
                 )
             ]
 
@@ -63,7 +78,7 @@ class QwenImageClassifier(BaseClassifier):
                     print("\nSearch results:", delta.extra.web_search_info)
                     print()
                 string_response.append(delta.content)
-            # print(''.join(string_response))
+            print(''.join(string_response))
             response_lines = "".join(string_response).splitlines()[-9:]
             if response_lines[0].startswith("```json"):
                 response_lines = response_lines[1:-1]
@@ -79,6 +94,8 @@ class QwenImageClassifier(BaseClassifier):
 
 if __name__ == "__main__":
     classifier = QwenImageClassifier(CLASSIFICATION_PROMPT_FILEPATH)
-    response = classifier.run(PATH_TO_DEBUG_IMAGES.iterdir())
+    iterator = PATH_TO_DEBUG_IMAGES.iterdir()
+    images_to_run = [(next(iterator), next(iterator))]
+    response = classifier.run(images_to_run)
     print(response)
     print(len(response))
