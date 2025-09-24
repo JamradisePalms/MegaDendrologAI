@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 
+
 class TreeAnalysis(BaseModel):
     tree_type: str
     has_hollow: int

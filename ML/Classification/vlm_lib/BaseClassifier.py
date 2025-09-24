@@ -49,12 +49,7 @@ class BaseClassifier(ABC):
                 image_path = api_requests[response]
                 try:
                     result = response.result()
-                    results.append(
-                        {
-                            **result.model_dump(),
-                            'image': image_path
-                        }
-                    )
+                    results.append({**result.model_dump(), "image": image_path})
                 except:
                     continue
         return results
