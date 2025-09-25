@@ -7,6 +7,7 @@ import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from ML.Classification.vlm_lib import BaseClassifier
+from ML.Classification.vlm_lib.Dataclasses import ClassificationTreeAnalysis
 from ML.Detection.BaseDetection import BaseDetection
 from ML.Classification.vlm_lib.utils import write_json
 from ML.Classification.vlm_lib.QwenImageClassifier import QwenImageClassifier
@@ -52,7 +53,7 @@ class Pipeline:
     
     def classify_objects(self, image_path: Path | str = None):
         try:
-            return self.classifier._single_request(image_path)
+            return self.classifier.run(image_path)
         except Exception as e:
             logger.error(f"Classification failed for {image_path}: {e}")
             return None
@@ -96,28 +97,19 @@ class Pipeline:
         else:
             images = list(image_path)
         
-        if self.max_workers > 1 and len(images) > 1:
-            with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
-                future_to_image = {
-                    executor.submit(self._process_one_image, image, **kwargs): image 
-                    for image in images
-                }
-                
-                for future in as_completed(future_to_image):
-                    image = future_to_image[future]
-                    try:
-                        result = future.result()
-                        run_results.extend(result)
-                    except Exception as e:
-                        logger.error(f"Error processing {image}: {e}")
-        else:
-            for image in images:
+        with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+            future_to_image = {
+                executor.submit(self._process_one_image, image, **kwargs): image 
+                for image in images
+            }
+            
+            for future in as_completed(future_to_image):
+                image = future_to_image[future]
                 try:
-                    result = self._process_one_image(image_path=image, **kwargs)
+                    result = future.result()
                     run_results.extend(result)
                 except Exception as e:
                     logger.error(f"Error processing {image}: {e}")
-                    continue
 
         if self.path_to_save_final_json and run_results:
             write_json(run_results, self.path_to_save_final_json)
@@ -137,7 +129,7 @@ class Pipeline:
 
 
 if __name__ == "__main__":
-    classifier = QwenImageClassifier(CLASSIFICATION_PROMPT_FILEPATH)
+    classifier = QwenImageClassifier(CLASSIFICATION_PROMPT_FILEPATH, ClassificationTreeAnalysis)
     detectron = YoloWrapper(weights_path=YOLO_MODEL)
     path_to_save_final_json = "./results.json"
 
