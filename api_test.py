@@ -1,18 +1,24 @@
-from qwen_api import Qwen
-from qwen_api.core.types.chat import ChatMessage
+from dotenv import load_dotenv
+load_dotenv()
 
-client = Qwen()
+from pathlib import Path
+from ML.Classification.vlm_lib.Dataclasses import DetectionTreeAnalysis, ClassificationTreeAnalysis
+from ML.Classification.vlm_lib.QwenImageClassifier import QwenImageClassifier
+from ML.Classification.vlm_lib.utils import write_json
+from configs.paths import PathConfig
 
-messages = [ChatMessage(
-    role="user",
-    content="Solve this step by step: A company's revenue increased by 25% in Q1, decreased by 15% in Q2, and increased by 30% in Q3. If the Q3 revenue is $169,000, what was the initial revenue?",
-    web_search=False,
-    thinking=True  # Enable thinking mode for step-by-step reasoning
-)]
+CLASSIFICATION_PATHS = PathConfig.ML.Classification
+CLASSIFICATION_PROMPT_FILEPATH = CLASSIFICATION_PATHS.CLASSIFICATION_PROMPT_FILEPATH
 
-response = client.chat.create(
-    messages=messages,
-    model="qwen-max-latest"
-)
+path_to_source_images = Path('Hack-processed-data/visualization')
+path_to_crop_images = Path('Hack-processed-data/tree_crops')
 
-print(response.choices.message.content)
+images_dataset = []
+for crop_image_filepath in path_to_crop_images.iterdir():
+    true_name = crop_image_filepath.name[12:]
+    source_image_filepath = path_to_source_images / f'det_{true_name}'
+    images_dataset.append((crop_image_filepath, source_image_filepath))
+
+classifier = QwenImageClassifier(CLASSIFICATION_PROMPT_FILEPATH, ClassificationTreeAnalysis)
+response = classifier.run(next(iter(images_dataset)))
+write_json(response, Path('Hack-processed-data/result.json'))

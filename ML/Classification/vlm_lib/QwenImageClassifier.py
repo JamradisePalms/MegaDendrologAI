@@ -1,14 +1,15 @@
 import json
-from typing import Iterable, Union
+from typing import Iterable, Union, Type
 from qwen_api import Qwen
 from qwen_api.core.exceptions import QwenAPIError
 from qwen_api.core.types.chat import ChatMessage, TextBlock, ImageBlock
 from pathlib import Path
 from configs.paths import PathConfig
+from pydantic import BaseModel
 
 from ML.Classification.vlm_lib.BaseClassifier import BaseClassifier
-from ML.Classification.vlm_lib.Dataclasses import TreeAnalysis
-
+from ML.Classification.vlm_lib.Parser import ResponseParser
+from ML.Classification.vlm_lib.Dataclasses import DetectionTreeAnalysis
 import urllib3
 from urllib3.exceptions import InsecureRequestWarning
 
@@ -28,10 +29,12 @@ CLASSIFICATION_DATASET_FILEPATH = CLASSIFICATION_PATHS.CLASSIFICATION_DATASET_FI
 
 
 class QwenImageClassifier(BaseClassifier):
-    def __init__(self, prompt_path):
+    def __init__(self, prompt_path: Path, pydantic_model: Type[BaseModel]):
         super().__init__(prompt_path)
+        self.pydantic_model = pydantic_model
+        self.parser = ResponseParser(pydantic_model)
 
-    def _single_request(self, image_path: Union[Path, Iterable[Path]]) -> TreeAnalysis:
+    def _single_request(self, image_path: Union[Path, Iterable[Path]]) -> BaseModel:
         client = Qwen()
         try:
             
@@ -78,22 +81,18 @@ class QwenImageClassifier(BaseClassifier):
                     print("\nSearch results:", delta.extra.web_search_info)
                     print()
                 string_response.append(delta.content)
-            print(''.join(string_response))
-            response_lines = "".join(string_response).splitlines()[-9:]
-            if response_lines[0].startswith("```json"):
-                response_lines = response_lines[1:-1]
-            else:
-                response_lines = response_lines[2:]
 
-            result = json.loads("\n".join(response_lines))
-
-            return TreeAnalysis.model_validate(result)
+            string_response = ''.join(string_response)
+            parsed_response = self.parser.parse(string_response)
+            
+            print(parsed_response)
+            return self.pydantic_model.model_validate(parsed_response)
         except QwenAPIError as e:
             print(f"Error: {str(e)}")
 
 
 if __name__ == "__main__":
-    classifier = QwenImageClassifier(CLASSIFICATION_PROMPT_FILEPATH)
+    classifier = QwenImageClassifier(CLASSIFICATION_PROMPT_FILEPATH, DetectionTreeAnalysis)
     iterator = PATH_TO_DEBUG_IMAGES.iterdir()
     images_to_run = [(next(iterator), next(iterator))]
     response = classifier.run(images_to_run)

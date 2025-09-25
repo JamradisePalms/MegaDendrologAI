@@ -5,11 +5,11 @@ from abc import ABC, abstractmethod
 from typing import Iterable, Tuple, List, Union, Dict, Any
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from tqdm import tqdm
-from ML.Classification.vlm_lib.Dataclasses import TreeAnalysis
+from pydantic import BaseModel
 
 
 class BaseClassifier(ABC):
-    def __init__(self, prompt_path):
+    def __init__(self, prompt_path: Path):
         self.prompt_path = prompt_path
         with open(self.prompt_path, "r", encoding="Utf-8") as f:
             message = f.read()
@@ -27,11 +27,11 @@ class BaseClassifier(ABC):
         return encoded_string, mime_type
 
     @abstractmethod
-    def _single_request(self, image_path: Path) -> TreeAnalysis:
+    def _single_request(self, image_path: Path) -> BaseModel:
         pass
 
     def run(
-        self, images: Union[Iterable[Path], Path], max_workers: int = 5
+        self, images: Union[Iterable[Iterable[Path]], Iterable[Path], Path], max_workers: int = 5
     ) -> Union[List[Dict[str, Any]], Dict[str, Any]]:
         if isinstance(images, Path):
             return self._single_request(images).model_dump()
@@ -39,7 +39,7 @@ class BaseClassifier(ABC):
         results = []
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             api_requests = {
-                executor.submit(self._single_request, image_path): image_path
+                executor.submit(self._single_request, image_path): str(image_path)
                 for image_path in images
             }
             api_requests_in_process = tqdm(
