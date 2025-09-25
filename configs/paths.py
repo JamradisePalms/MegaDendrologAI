@@ -43,8 +43,11 @@ class PathConfig:
             PATH_TO_SAVE_TRAIN_RUNS = YOLO_RUNS_DIR
             PATH_TO_YOLO_CONFIG = PATH_TO_YOLO_CONFIG_YAML
 
-            PATH_TO_YOLO_SMALL_WEIGHTS = "TODO: Add yolo small weights"
-            PATH_TO_YOLO_MEDIUM_WEIGHTS = Path("/home/jamradise/MegaDendrologAI/ML/Detection/yolo_weights/yolov11m/best.pt")
+            PATH_TO_YOLO_SMALL_BEST_WEIGHTS = Path("/home/jamradise/MegaDendrologAI/ML/Detection/yolo_weights/yolov11s/best.pt")
+            PATH_TO_YOLO_SMALL_LAST_WEIGHTS = Path("/home/jamradise/MegaDendrologAI/ML/Detection/yolo_weights/yolov11s/last.pt")
+
+            PATH_TO_YOLO_MEDIUM_BEST_WEIGHTS = Path("/home/jamradise/MegaDendrologAI/ML/Detection/yolo_weights/yolov11m/best.pt")
+            PATH_TO_YOLO_MEDIUM_LAST_WEIGHTS = Path("/home/jamradise/MegaDendrologAI/ML/Detection/yolo_weights/yolov11s/last.pt")
 
         PATH_TO_RAW_IMAGES = DETECTION_DATASET_DIR / "Hack-raw-data"
         PATH_TO_SAVE_PROCESSED_IMAGES = DETECTION_DATASET_DIR / "Hack-processed-data"
