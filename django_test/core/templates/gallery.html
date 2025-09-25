@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}Галерея - Forest Life{% endblock %}
+
+{% block content %}
+<!-- Gallery Page -->
+<div id="gallery-page" class="page">
+    <section class="gallery-section">
+        <div class="container">
+            <h2>Галерея деревьев</h2>
+            <div class="gallery-grid" id="gallery-grid">
+                <!-- Sample photos will be loaded here -->
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Специфичные для галереи скрипты
+function loadGalleryPhotos() {
+    // Логика загрузки фото в галерею
+    console.log('Загрузка галереи...');
+}
+
+// Загружаем фото при открытии страницы
+document.addEventListener('DOMContentLoaded', loadGalleryPhotos);
+</script>
+{% endblock %}
