@@ -2,15 +2,15 @@ import 'dart:io';
 import 'dart:async';
 import '../models/report.dart';
 
-class ApiService {
+class LocalAnalysis {
   Future<Report> analyzeImage(File imageFile) async {
     // Имитируем задержку анализа
     await Future.delayed(Duration(seconds: 2));
 
     // Возвращаем фиктивный отчет
     return Report(
-      plantName: 'Oak',
-      probability: 95.0,
+      plantName: 'grass',
+      probability: 5.0,
       species: 'Quercus robur',
       trunkRot: 'Нет',
       trunkHoles: 'Нет',

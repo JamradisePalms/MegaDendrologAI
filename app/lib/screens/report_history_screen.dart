@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/report.dart';
 import '../screens/report_screen.dart';
 import '../services/report_service.dart';
+import 'dart:io'; // для File
 
 class ReportHistoryScreen extends StatefulWidget {
   @override
@@ -96,14 +97,15 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
   @override
   void initState() {
     super.initState();
-    _loadReports();
+    _loadReports(); // универсальный метод
   }
 
-  Future<void> _loadReports({int page = 1}) async {
-  setState(() => _loading = true);
 
-  // Считаем общее количество отчетов по текущим фильтрам
-  int totalReports = await _service.countReports(
+  /// Метод загрузки отчетов без интернета
+  Future<void> _loadOfflineReports({int page = 1}) async {
+    setState(() => _loading = true);
+
+    int totalReports = await _service.countReports(
       minProbability: _minProbability,
       maxProbability: _maxProbability,
       species: _selectedSpecies,
@@ -111,9 +113,8 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
     );
 
     _totalPages = (totalReports / _limit).ceil();
-    if (_totalPages == 0) _totalPages = 1; // хотя бы 1 страница
+    if (_totalPages == 0) _totalPages = 1;
 
-    // Загружаем отчеты для текущей страницы
     List<Report> reports = await _service.fetchReports(
       page: page,
       limit: _limit,
@@ -130,8 +131,11 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
     });
   }
 
-
-
+  /// общий метод _loadReports как обертка для будущей реализации с интернетом
+  Future<void> _loadReports({int page = 1}) async {
+    // здесь позже можно проверить интернет и вызвать онлайн/офлайн версии
+    await _loadOfflineReports(page: page);
+  }
 
   void _nextPage() {
     if (_currentPage < _totalPages) _loadReports(page: _currentPage + 1);
@@ -160,25 +164,44 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
             child: RefreshIndicator(
               onRefresh: () => _loadReports(page: 1),
               child: _loading
-                  ? Center(child: CircularProgressIndicator())
+                ? Center(child: CircularProgressIndicator())
                   : ListView.builder(
-                      itemCount: _reports.length,
-                      itemBuilder: (context, index) {
-                        final report = _reports[index];
-                        return ListTile(
-                          title: Text(report.plantName),
-                          subtitle: Text('Вероятность: ${report.probability}%'),
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => ReportScreen(report: report),
-                              ),
-                            );
-                          },
-                        );
-                      },
-                    ),
+                    itemCount: _reports.length,
+                    itemBuilder: (context, index) {
+                      final report = _reports[index];
+                      return ListTile(
+                        leading: (report.imagePath != null && report.imagePath!.isNotEmpty)
+                          ? Image.file(
+                              File(report.imagePath!),
+                              width: 50,
+                              height: 50,
+                              fit: BoxFit.cover,
+                            )
+                          : (report.imageUrl != null && report.imageUrl!.isNotEmpty)
+                              ? Image.network(
+                                  report.imageUrl!,
+                                  width: 50,
+                                  height: 50,
+                                  fit: BoxFit.cover,
+                                )
+                              : Icon(
+                                  Icons.image_not_supported,
+                                  size: 50,
+                                ),
+
+                        title: Text(report.plantName ?? 'Неизвестное растение'),
+                        subtitle: Text('Вероятность: ${report.probability}%'),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => ReportScreen(report: report),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
             ),
           ),
           Row(
