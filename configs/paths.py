@@ -49,5 +49,8 @@ class PathConfig:
             PATH_TO_YOLO_MEDIUM_BEST_WEIGHTS = Path("/home/jamradise/MegaDendrologAI/ML/Detection/yolo_weights/yolov11m/best.pt")
             PATH_TO_YOLO_MEDIUM_LAST_WEIGHTS = Path("/home/jamradise/MegaDendrologAI/ML/Detection/yolo_weights/yolov11s/last.pt")
 
+            PATH_TO_YOLO_LARGE_BEST_WEIGHTS = Path("/home/jamradise/MegaDendrologAI/ML/Detection/yolo_weights/yolov11l/best.pt")
+            PATH_TO_YOLO_LARGE_BEST_WEIGHTS = Path("/home/jamradise/MegaDendrologAI/ML/Detection/yolo_weights/yolov11l/best.pt")
+
         PATH_TO_RAW_IMAGES = DETECTION_DATASET_DIR / "Hack-raw-data"
         PATH_TO_SAVE_PROCESSED_IMAGES = DETECTION_DATASET_DIR / "Hack-processed-data"
