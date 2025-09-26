@@ -1,7 +1,6 @@
 // lib/services/db_provider.dart
 import 'dart:io';
 import 'package:path/path.dart';
-import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 class DBProvider {
@@ -25,8 +24,9 @@ class DBProvider {
       return await dbFactory.openDatabase(
         path,
         options: OpenDatabaseOptions(
-          version: 1,
+          version: 2, // ⬅️ поднял версию (чтобы миграция сработала)
           onCreate: _onCreate,
+          onUpgrade: _onUpgrade,
         ),
       );
     } else {
@@ -35,8 +35,9 @@ class DBProvider {
       final path = join(dbPath, fileName);
       return await openDatabase(
         path,
-        version: 1,
+        version: 2, // ⬅️ тоже версия 2
         onCreate: _onCreate,
+        onUpgrade: _onUpgrade,
       );
     }
   }
@@ -57,7 +58,10 @@ class DBProvider {
         diseases TEXT,
         dryBranchPercentage REAL,
         additionalInfo TEXT,
-        imagePath TEXT
+        overallCondition TEXT,
+        imageUrl TEXT,
+        imagePath TEXT,
+        analyzedAt TEXT
       )
     ''');
 
@@ -65,6 +69,15 @@ class DBProvider {
     await db.execute('CREATE INDEX idx_reports_species ON reports(species)');
     await db.execute('CREATE INDEX idx_reports_probability ON reports(probability)');
     await db.execute('CREATE INDEX idx_reports_trunkRot ON reports(trunkRot)');
+  }
+
+  Future _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      // добавляем новые колонки
+      await db.execute('ALTER TABLE reports ADD COLUMN overallCondition TEXT');
+      await db.execute('ALTER TABLE reports ADD COLUMN imageUrl TEXT');
+      await db.execute('ALTER TABLE reports ADD COLUMN analyzedAt TEXT');
+    }
   }
 
   Future close() async {

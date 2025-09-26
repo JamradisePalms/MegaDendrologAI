@@ -20,6 +20,7 @@ class ReportService {
 
   Map<String, dynamic> _reportToMap(Report r) {
     return {
+      'id': r.id,
       'plantName': r.plantName,
       'probability': r.probability,
       'species': r.species,
@@ -33,26 +34,30 @@ class ReportService {
       'dryBranchPercentage': r.dryBranchPercentage,
       'additionalInfo': r.additionalInfo,
       'imagePath': r.imagePath,
+      'imageUrl': r.imageUrl,
     };
   }
 
   Report _mapToReport(Map<String, dynamic> m) {
     return Report(
-      plantName: m['plantName'] as String,
-      probability: (m['probability'] as num).toDouble(),
-      species: m['species'] as String,
-      trunkRot: m['trunkRot'] as String,
-      trunkHoles: m['trunkHoles'] as String,
-      trunkCracks: m['trunkCracks'] as String,
-      trunkDamage: m['trunkDamage'] as String,
-      crownDamage: m['crownDamage'] as String,
-      fruitingBodies: m['fruitingBodies'] as String,
-      diseases: m['diseases'] as String,
-      dryBranchPercentage: (m['dryBranchPercentage'] as num).toDouble(),
-      additionalInfo: m['additionalInfo'] as String,
-      imagePath: m['imagePath'] as String,
+      id: m['id'] as int?,
+      plantName: m['plantName'] as String?,
+      probability: (m['probability'] as num?)?.toDouble(),
+      species: m['species'] as String?,
+      trunkRot: m['trunkRot'] as String?,
+      trunkHoles: m['trunkHoles'] as String?,
+      trunkCracks: m['trunkCracks'] as String?,
+      trunkDamage: m['trunkDamage'] as String?,
+      crownDamage: m['crownDamage'] as String?,
+      fruitingBodies: m['fruitingBodies'] as String?,
+      diseases: m['diseases'] as String?,
+      dryBranchPercentage: (m['dryBranchPercentage'] as num?)?.toDouble(),
+      additionalInfo: m['additionalInfo'] as String?,
+      imagePath: m['imagePath'] as String?,
+      imageUrl: m['imageUrl'] as String?,
     );
   }
+
 
   Future<void> init() async {
     await DBProvider.instance.database;

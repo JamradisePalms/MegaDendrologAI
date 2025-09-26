@@ -171,26 +171,26 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
                       final report = _reports[index];
                       return ListTile(
                         leading: (report.imagePath != null && report.imagePath!.isNotEmpty)
-                          ? Image.file(
-                              File(report.imagePath!),
-                              width: 50,
-                              height: 50,
-                              fit: BoxFit.cover,
-                            )
-                          : (report.imageUrl != null && report.imageUrl!.isNotEmpty)
-                              ? Image.network(
-                                  report.imageUrl!,
-                                  width: 50,
-                                  height: 50,
-                                  fit: BoxFit.cover,
-                                )
-                              : Icon(
-                                  Icons.image_not_supported,
-                                  size: 50,
-                                ),
+                            ? Image.file(
+                                File(report.imagePath!),
+                                width: 50,
+                                height: 50,
+                                fit: BoxFit.cover,
+                              )
+                            : (report.imageUrl != null && report.imageUrl!.isNotEmpty)
+                                ? Image.network(
+                                    report.imageUrl!,
+                                    width: 50,
+                                    height: 50,
+                                    fit: BoxFit.cover,
+                                  )
+                                : Icon(
+                                    Icons.image_not_supported,
+                                    size: 50,
+                                  ),
 
                         title: Text(report.plantName ?? 'Неизвестное растение'),
-                        subtitle: Text('Вероятность: ${report.probability}%'),
+                        subtitle: Text('Вероятность: ${report.probability ?? 0}%'),
                         onTap: () {
                           Navigator.push(
                             context,
@@ -199,9 +199,21 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
                             ),
                           );
                         },
+
+                        // 🔴 Вот здесь добавляем кнопку удаления
+                        trailing: IconButton(
+                          icon: Icon(Icons.delete, color: Colors.red),
+                          onPressed: () async {
+                            if (report.id != null) {
+                              await _service.deleteReportById(report.id!);
+                              _loadReports(page: _currentPage); // обновляем список
+                            }
+                          },
+                        ),
                       );
                     },
                   ),
+
             ),
           ),
           Row(
