@@ -37,27 +37,25 @@ class QwenImageClassifier(BaseClassifier):
     def _single_request(self, image_path: Union[Path, Iterable[Path]]) -> BaseModel:
         client = Qwen()
         try:
-            
-            blocks = [
-                TextBlock(block_type='text', text=self.prompt)
-            ]
+
+            blocks = [TextBlock(block_type="text", text=self.prompt)]
             if isinstance(image_path, Iterable):
                 for image in image_path:
                     getdataImage = client.chat.upload_file(file_path=str(image))
                     blocks.append(
                         ImageBlock(
-                            block_type='image',
+                            block_type="image",
                             url=getdataImage.file_url,
-                            image_mimetype=getdataImage.image_mimetype
+                            image_mimetype=getdataImage.image_mimetype,
                         )
                     )
             else:
                 getdataImage = client.chat.upload_file(file_path=str(image_path))
                 blocks.append(
                     ImageBlock(
-                        block_type='image',
+                        block_type="image",
                         url=getdataImage.file_url,
-                        image_mimetype=getdataImage.image_mimetype
+                        image_mimetype=getdataImage.image_mimetype,
                     )
                 )
             messages = [
@@ -82,17 +80,18 @@ class QwenImageClassifier(BaseClassifier):
                     print()
                 string_response.append(delta.content)
 
-            string_response = ''.join(string_response)
+            string_response = "".join(string_response)
             parsed_response = self.parser.parse(string_response)
-            
-            print(parsed_response)
+
             return self.pydantic_model.model_validate(parsed_response)
         except QwenAPIError as e:
             print(f"Error: {str(e)}")
 
 
 if __name__ == "__main__":
-    classifier = QwenImageClassifier(CLASSIFICATION_PROMPT_FILEPATH, DetectionTreeAnalysis)
+    classifier = QwenImageClassifier(
+        CLASSIFICATION_PROMPT_FILEPATH, DetectionTreeAnalysis
+    )
     iterator = PATH_TO_DEBUG_IMAGES.iterdir()
     images_to_run = [(next(iterator), next(iterator))]
     response = classifier.run(images_to_run)

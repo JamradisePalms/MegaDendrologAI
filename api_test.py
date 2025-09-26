@@ -20,5 +20,5 @@ for crop_image_filepath in path_to_crop_images.iterdir():
     images_dataset.append((crop_image_filepath, source_image_filepath))
 
 classifier = QwenImageClassifier(CLASSIFICATION_PROMPT_FILEPATH, ClassificationTreeAnalysis)
-response = classifier.run(next(iter(images_dataset)))
+response = classifier.run(path_to_source_images.iterdir(), max_workers=1)
 write_json(response, Path('Hack-processed-data/result.json'))
