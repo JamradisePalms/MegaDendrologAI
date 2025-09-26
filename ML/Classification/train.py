@@ -7,6 +7,7 @@ from ML.Classification.torch_lib.ImageDataset import ImageDatasetJson
 from ML.Classification.torch_lib.ImageCollator import ImageCollator
 from ML.Classification.torch_lib.config import TrainConfigs
 from ML.Classification.torch_lib.ResNet import ResNet
+import json
 
 CURRENT_CONFIG = TrainConfigs.HollowClassification
 
@@ -29,11 +30,17 @@ model.train()
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.AdamW(model.parameters(), lr=CURRENT_CONFIG.LR)
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
+model.to(device)
+
+batch_losses = []
+epoch_losses = []
 
 for epoch in range(CURRENT_CONFIG.NUM_EPOCHS):
     progress_bar = tqdm(
         train_loader, desc=f"Epoch: {epoch + 1} of {CURRENT_CONFIG.NUM_EPOCHS}"
     )
+    epoch_loss_sum = 0.0
+    epoch_batch_count = 0
     for batch in progress_bar:
         pixel_values = batch['pixel_values'].to(device)
         labels = batch['labels'].to(device)
@@ -42,4 +49,18 @@ for epoch in range(CURRENT_CONFIG.NUM_EPOCHS):
         loss = criterion(logits, labels)
         loss.backward()
         optimizer.step()
+        batch_loss_value = loss.item()
+        batch_losses.append(batch_loss_value)
+        epoch_loss_sum += batch_loss_value
+        epoch_batch_count += 1
+    if epoch_batch_count > 0:
+        epoch_avg_loss = epoch_loss_sum / epoch_batch_count
+        epoch_losses.append(epoch_avg_loss)
+
+with open(CURRENT_CONFIG.PATH_TO_SAVE_MODEL + ".losses.json", 'w') as f:
+    json.dump({
+        'batch_losses': batch_losses,
+        'epoch_losses': epoch_losses,
+    }, f)
+
 torch.save(model.state_dict(), CURRENT_CONFIG.PATH_TO_SAVE_MODEL)

@@ -54,3 +54,4 @@ class PathConfig:
 
         PATH_TO_RAW_IMAGES = DETECTION_DATASET_DIR / "Hack-raw-data"
         PATH_TO_SAVE_PROCESSED_IMAGES = DETECTION_DATASET_DIR / "Hack-processed-data"
+        PATH_TO_FULL_DATASET = ROOT_PATH / 'dataset_to_mark'

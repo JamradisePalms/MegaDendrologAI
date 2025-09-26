@@ -1,3 +1,6 @@
+from dotenv import load_dotenv
+load_dotenv()
+
 import json
 from typing import Iterable, Union, Type
 from qwen_api import Qwen
@@ -9,7 +12,7 @@ from pydantic import BaseModel
 
 from ML.Classification.vlm_lib.BaseClassifier import BaseClassifier
 from ML.Classification.vlm_lib.Parser import ResponseParser
-from ML.Classification.vlm_lib.Dataclasses import DetectionTreeAnalysis
+from ML.Classification.vlm_lib.Dataclasses import DetectionTreeAnalysis, ClassificationTreeAnalysis
 import urllib3
 from urllib3.exceptions import InsecureRequestWarning
 
@@ -88,12 +91,14 @@ class QwenImageClassifier(BaseClassifier):
             print(f"Error: {str(e)}")
 
 
+# qvq-72b-preview-0310
+# qwen3-vl-plus
 if __name__ == "__main__":
     classifier = QwenImageClassifier(
-        CLASSIFICATION_PROMPT_FILEPATH, DetectionTreeAnalysis
+        CLASSIFICATION_PROMPT_FILEPATH, ClassificationTreeAnalysis
     )
     iterator = PATH_TO_DEBUG_IMAGES.iterdir()
-    images_to_run = [(next(iterator), next(iterator))]
+    images_to_run = next(iterator)
     response = classifier.run(images_to_run)
     print(response)
     print(len(response))

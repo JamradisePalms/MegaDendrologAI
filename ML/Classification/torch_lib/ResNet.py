@@ -5,7 +5,6 @@ from transformers import ResNetForImageClassification
 class ResNet(nn.Module):
     def __init__(self, num_labels: int = 2):
         super().__init__()
-        # Made dynamic number of labels for reusing resnet on different tree classifications
         self.num_labels = num_labels
 
         self.resnet = ResNetForImageClassification.from_pretrained(
