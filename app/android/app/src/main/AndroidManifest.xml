@@ -42,4 +42,9 @@
             <data android:mimeType="text/plain"/>
         </intent>
     </queries>
+    <!-- required for camera capture -->
+    <uses-permission android:name="android.permission.CAMERA"/>
+    <!-- optional: для старых Android (<=9) если планируешь записывать на external storage -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28"/>
+
 </manifest>
