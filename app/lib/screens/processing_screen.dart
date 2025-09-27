@@ -48,7 +48,8 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
       Report report;
       if (internetAvailable) {
         debugPrint('Есть интернет → используем ApiService для файла: ${savedImage.path}');
-        report = await _apiService.analyzeImage(savedImage);
+        //report = await _apiService.analyzeImage(savedImage);
+        report = await _localAnalysis.analyzeImage(savedImage);
       } else {
         debugPrint('Нет интернета → используем LocalAnalysis для файла: ${savedImage.path}');
         report = await _localAnalysis.analyzeImage(savedImage);
