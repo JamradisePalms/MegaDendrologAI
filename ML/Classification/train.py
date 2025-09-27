@@ -9,7 +9,7 @@ from ML.Classification.torch_lib.config import TrainConfigs
 from ML.Classification.torch_lib.ResNet import ResNet
 import json
 
-CURRENT_CONFIG = TrainConfigs.HollowClassification
+CURRENT_CONFIG = TrainConfigs.HollowClassificationSmallModel
 
 train_dataset = ImageDatasetJson(
     CURRENT_CONFIG.TRAIN_JSON_FILEPATH,
@@ -25,7 +25,7 @@ train_loader = DataLoader(
     num_workers=4,
 )
 
-model = ResNet(num_labels=CURRENT_CONFIG.NUM_LABELS)
+model = ResNet(num_labels=CURRENT_CONFIG.NUM_LABELS, model_name=CURRENT_CONFIG.MODEL_NAME)
 model.train()
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.AdamW(model.parameters(), lr=CURRENT_CONFIG.LR)
@@ -57,10 +57,10 @@ for epoch in range(CURRENT_CONFIG.NUM_EPOCHS):
         epoch_avg_loss = epoch_loss_sum / epoch_batch_count
         epoch_losses.append(epoch_avg_loss)
 
-with open(CURRENT_CONFIG.PATH_TO_SAVE_MODEL + ".losses.json", 'w') as f:
+torch.save(model.state_dict(), CURRENT_CONFIG.PATH_TO_SAVE_MODEL)
+
+with open(str(CURRENT_CONFIG.PATH_TO_SAVE_MODEL) + ".losses.json", 'w') as f:
     json.dump({
         'batch_losses': batch_losses,
         'epoch_losses': epoch_losses,
     }, f)
-
-torch.save(model.state_dict(), CURRENT_CONFIG.PATH_TO_SAVE_MODEL)
