@@ -5,7 +5,7 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 from ML.Classification.torch_lib.ImageDataset import ImageDatasetJson
 from ML.Classification.torch_lib.ImageCollator import ImageCollator
-from ML.Classification.torch_lib.config import TrainConfigs
+from configs.train_config_classification import TrainConfigs
 from ML.Classification.torch_lib.ResNet import ResNet
 import json
 

@@ -6,7 +6,7 @@ from datetime import datetime
 from configs.paths import PathConfig
 from ML.Detection.utils import create_default_config
 from ML.logging_config import setup_logging
-from BaseDetection import BaseDetection
+from ML.Detection.BaseDetection import BaseDetection
 import logging
 
 logger = logging.getLogger(__name__)
