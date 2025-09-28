@@ -79,47 +79,38 @@ class BaseDetection(ABC):
         save_path = Path(save_dir)
         save_path.mkdir(parents=True, exist_ok=True)
         
-        for _, res in enumerate(results):
-            res.save(save_dir=save_path)
-            
+        if isinstance(results, list):
+            for i, res in enumerate(results):
+                res.save(filename=save_path / f"detection_{i}.jpg")
+                
+                if hasattr(res, 'save_txt'):
+                    res.save_txt(save_path / f"detection_{i}.txt")
+                    
+        else:
+            results.save(filename=save_path / "detection_0.jpg")
+            if hasattr(results, 'save_txt'):
+                results.save_txt(save_path / "detection_0.txt")
+        
         logger.info(f"Detection results saved to {save_path}")
 
-    def save_cropped_images(results, image_path, save_dir, padding=10, class_names=None):
-        """
-        Вырезает области изображения по bounding box'ам и сохраняет их с отступом.
-
-        Args:
-            results: результаты YOLO-like
-            image_path: путь к исходному изображению
-            save_dir: директория для сохранения вырезанных изображений
-            padding: отступ в пикселях вокруг bounding box'а
-        """
-        img = cv2.imread(str(image_path))
+    def save_cropped_images(self, results, original_image_path, save_dir):
         save_path = Path(save_dir)
         save_path.mkdir(parents=True, exist_ok=True)
-
-        if class_names is None:
-            class_names = {
-                0: "tree",
-                1: "shrub"
-            }
         
-        for i, res in enumerate(results):
-            boxes = res.boxes.xyxy.cpu().numpy()  # [x1, y1, x2, y2]
-            cls_tensor = res.boxes.cls.cpu().numpy()
+        original_img = cv2.imread(str(original_image_path))
+        
+        if isinstance(results, list):
+            result = results[0]
+        else:
+            result = results
             
-            for j, (box, cls) in enumerate(zip(boxes, cls_tensor)):
-                x1, y1, x2, y2 = map(int, box)
-                h, w = img.shape[:2]
-
-                x1 = max(0, x1 - padding)
-                y1 = max(0, y1 - padding)
-                x2 = min(w, x2 + padding)
-                y2 = min(h, y2 + padding)
-
-                cropped = img[y1:y2, x1:x2]
-
-                class_name = class_names[cls]
-
-                output_path = save_path / f"{class_name}_{i}_obj_{j}.jpg"
-                cv2.imwrite(str(output_path), cropped)
+        boxes = result.boxes
+        if boxes is not None:
+            for i, box in enumerate(boxes.xyxy):
+                x1, y1, x2, y2 = map(int, box.tolist())
+                
+                cropped_img = original_img[y1:y2, x1:x2]
+                
+                cv2.imwrite(str(save_path / f"cropped_{i}.jpg"), cropped_img)
+        
+        logger.info(f"Cropped images saved to {save_path}")
