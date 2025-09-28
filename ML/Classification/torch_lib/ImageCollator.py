@@ -7,12 +7,20 @@ class ImageCollator:
     def __init__(
         self,
         processor: Callable[[List[ImageFile], Any], Dict[str, torch.Tensor]],
+        task_names: List[str]
     ):
         self.processor = processor
+        self.task_names = task_names
 
-    def __call__(self, batch: List[Tuple[Image, int]]):
-        images, labels = zip(*batch)
+    def __call__(self, batch: List[Tuple[Image, Dict[str, int]]]):
+        images, labels_dict = zip(*batch)
         inputs = self.processor(images, return_tensors="pt")
-        inputs["labels"] = torch.tensor(labels)
-
+        
+        labels = {}
+        for task_name in self.task_names:
+            task_labels = [label_dict[task_name] for label_dict in labels_dict]
+            labels[task_name] = torch.tensor(task_labels)
+        
+        inputs["labels"] = labels
         return inputs
+    
