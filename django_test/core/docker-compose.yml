@@ -1,0 +1,61 @@
+version: "3.8"
+
+services:
+  db:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: pmc
+      POSTGRES_DB: database
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - backend
+
+  web:
+    user: root
+    build: .
+    restart: always
+    depends_on:
+      - db
+    env_file:
+      - .env                 # см. ниже пример .env
+        # environment:
+      # Если вы не используете .env, можно указать прямо здесь:
+      #DJANGO_SECRET_KEY: 'django-insecure-he*zd19=imx_ngj*imy^i4@kk$je3y(7o$!0ca*38dnb12#df+'
+      # DEBUG: '0'
+    volumes:
+      - static_volume:/vol/static
+      - media_volume:/vol/media
+      - ./:/app:rw            # удобство разработки; в prod можно убрать
+    networks:
+      - backend
+
+  nginx:
+    image: nginx:stable
+    restart: always
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - static_volume:/vol/static:ro      # nginx будет отдавать статику
+      - media_volume:/vol/media:ro
+      # SSL certs (если будете использовать Let's Encrypt/сертификаты)
+    depends_on:
+      - web
+    networks:
+      - backend
+      - frontend
+
+volumes:
+  db_data:
+  static_volume:
+  media_volume:
+
+networks:
+  backend:
+  frontend:
+
