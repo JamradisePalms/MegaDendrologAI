@@ -1,25 +1,3 @@
-from pathlib import Path
-from typing import Iterable, List
-import shutil
-import os
-import datetime
-import logging
-from concurrent.futures import ThreadPoolExecutor, as_completed
-
-from ML.Classification.vlm_lib import BaseClassifier
-from ML.Classification.vlm_lib.Dataclasses import ClassificationTreeAnalysis
-from ML.Detection.BaseDetection import BaseDetection
-from ML.Classification.vlm_lib.utils import write_json
-from ML.Classification.vlm_lib.QwenImageClassifier import QwenImageClassifier
-from ML.Detection.YOLOWrapper import YoloWrapper
-from configs.paths import PathConfig
-
-CLASSIFICATION_PATHS = PathConfig.ML.Classification
-CLASSIFICATION_PROMPT_FILEPATH = CLASSIFICATION_PATHS.CLASSIFICATION_PROMPT_FILEPATH
-
-YOLO_MODEL = PathConfig.ML.Detection.PATH_TO_YOLO_MEDIUM_BEST_WEIGHTS
-logger = logging.getLogger(__name__)
-
 class Pipeline:
     def __init__(
         self,
@@ -27,7 +5,7 @@ class Pipeline:
         classifier: BaseClassifier,
         path_to_save_final_json: Path | str = None,
         max_workers: int = 1,
-        clean_up_tmp_files = True,
+        clean_up_tmp_files = False,
     ):
         self.detectron = detection_model
         self.classifier = classifier
@@ -41,9 +19,12 @@ class Pipeline:
 
         try:
             results = self.detectron.predict(image_path, **kwargs)
-            self.detectron.save_results(results, tmp_folder_name / "detection_results")
-            self.detectron.save_cropped_images(results, image_path, 
-                                             save_dir=tmp_folder_name / "cropped")
+
+            detection_save_dir = tmp_folder_name / "detection_results"
+            cropped_save_dir = tmp_folder_name / "cropped"
+
+            self.detectron.save_results(results, detection_save_dir)
+            self.detectron.save_cropped_images(results, image_path, cropped_save_dir)
             return results, tmp_folder_name
         except Exception as e:
             logger.error(f"Detection failed for {image_path}: {e}")
@@ -92,10 +73,13 @@ class Pipeline:
         """Основной метод запуска пайплайна"""
         run_results = []
         
-        if not isinstance(image_path, (list, tuple)) and not hasattr(image_path, '__iter__'):
+        if not isinstance(image_path, (list, tuple)):
             images = [image_path]
-        else:
-            images = list(image_path)
+        elif hasattr(image_path, '__iter__'):
+            if isinstance(image_path[0], str):
+                images = [Path(image) for image in image_path]
+            else:
+                images = image_path
         
         with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
             future_to_image = {
@@ -135,8 +119,11 @@ if __name__ == "__main__":
 
     pipe = Pipeline(detection_model=detectron, classifier=classifier, path_to_save_final_json=path_to_save_final_json)
 
-    pipe.run({
+    pipe.run(
+        image_path=r"C:\Users\shari\PycharmProjects\MegaDendrologAI\ML\Detection\data\Hack-raw-data\2j0hC2-Jfgs.jpg",
+        **{
         'iou': 0.45,
         'conf': 0.3, 
         'imgsz': 640,
-    })
+    },
+    )
