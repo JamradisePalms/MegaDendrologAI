@@ -20,9 +20,11 @@ def get_table(request, user_id=""):
     Выдаёт все элементы бд с деревьями
     '''
     if request.method == 'GET':
-        event_info = Result.objects.filter(user_id=user_id).order_by('event_id')
-        event_info_serializer = EventInfoSerializer(event_info, many=True)
-        return JsonResponse(event_info_serializer.data, safe=False)
+ #       event_info = Result.objects.filter(user_id=user_id).order_by('event_id')
+#        event_info_serializer = EventInfoSerializer(event_info, many=True)
+    #    return JsonResponse(event_info_serializer.data, safe=False)
+
+        return JsonResponse("jkhgjkhjfkhdjgkhdjgk", safe=False)
 
 
 @api_view(["POST"])

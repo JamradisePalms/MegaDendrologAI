@@ -80,6 +80,9 @@ desktop.ini
 # -----------------------
 .ipynb_checkpoints/
 /tmp.ipynb
+tmp*
+*.json
+*.onnx
 
 # -----------------------
 # Logs
