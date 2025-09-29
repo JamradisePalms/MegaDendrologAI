@@ -1,0 +1,18 @@
+{
+  "id": 1,
+  "plantName": "Oak",
+  "probability": 70.0,
+  "species": "Quercus robur",
+  "trunkRot": "Нет",
+  "trunkHoles": "Нет",
+  "trunkCracks": "Мелкие",
+  "trunkDamage": "Нет",
+  "crownDamage": "Лёгкие",
+  "fruitingBodies": "Есть",
+  "diseases": "Отсутствуют",
+  "dryBranchPercentage": 10.0,
+  "additionalInfo": "Здоровое дерево",
+  "overallCondition": "Здоровое",
+  "imageUrl": "https://encrypted-tbn1.gstatic.com/images?q=tbn:ANd9GcSZIYg2IxiOEE_o4akQdr-3UgS-0MKWLlXp4SA9yE5RqhGCrjEgjHD8aF_Rv9_NI8y-kYW9134DifHJuwVGwfHVVr5FJyWPH3CeCbT7rfQC",
+  "date": "2025-09-27T12:00:00Z"
+}

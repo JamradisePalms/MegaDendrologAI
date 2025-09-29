@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import '../models/report.dart';
 import '../screens/report_screen.dart';
 import '../services/report_service.dart';
+import '../services/api_service.dart';
 import 'dart:io'; // для File
+import '../services/connectivity_service.dart';
 
 class ReportHistoryScreen extends StatefulWidget {
   @override
@@ -11,6 +13,7 @@ class ReportHistoryScreen extends StatefulWidget {
 
 class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
   final ReportService _service = ReportService();
+  final ApiService _apiService = ApiService();
   List<Report> _reports = [];
   int _currentPage = 1;
   final int _limit = 10;
@@ -130,11 +133,42 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
       _loading = false;
     });
   }
+  Future<void> _loadOnlineReports({int page = 1}) async {
+    setState(() => _loading = true);
+
+    List<Report> reports = await _apiService.fetchReports(
+      page: page,
+      limit: _limit,
+      minProbability: _minProbability,
+      maxProbability: _maxProbability,
+      species: _selectedSpecies,
+      features: _featureFilters,
+    );
+
+    // Можно считать totalPages на основе длины reports.json
+    final totalReports = reports.length; 
+    _totalPages = (totalReports / _limit).ceil();
+    if (_totalPages == 0) _totalPages = 1;
+
+    setState(() {
+      _reports = reports;
+      _currentPage = page;
+      _loading = false;
+    });
+  }
+
 
   /// общий метод _loadReports как обертка для будущей реализации с интернетом
   Future<void> _loadReports({int page = 1}) async {
+    final internetAvailable = await ConnectivityService.hasInternet();
     // здесь позже можно проверить интернет и вызвать онлайн/офлайн версии
-    await _loadOfflineReports(page: page);
+    if (internetAvailable){
+      await _loadOnlineReports(page: page);
+    }
+    else{
+      await _loadOfflineReports(page: page);
+    }
+    
   }
 
   void _nextPage() {
@@ -195,7 +229,7 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => ReportScreen(report: report),
+                              builder: (_) => ReportScreen(reports: [report]),
                             ),
                           );
                         },
