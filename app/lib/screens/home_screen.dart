@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 import 'processing_screen.dart';
 import 'package:plant_analyzer/screens/report_history_screen.dart';
+import 'crop_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -82,9 +83,10 @@ class _HomeScreenState extends State<HomeScreen> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => ProcessingScreen(imageFile: imageFile),
+          builder: (_) => CropScreen(imageFile: imageFile),
         ),
       );
+
     } catch (e) {
       debugPrint('Ошибка при съемке: $e');
       if (mounted) {

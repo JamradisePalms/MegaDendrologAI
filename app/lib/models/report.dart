@@ -16,6 +16,7 @@ class Report {
   final String? imageUrl;
   final String? imagePath;
   final String? analyzedAt;
+  final bool? isVerified;
 
   Report({
     this.id,
@@ -35,6 +36,7 @@ class Report {
     this.imageUrl,
     this.imagePath,
     this.analyzedAt,
+    this.isVerified,
   });
 
   factory Report.fromJson(Map<String, dynamic> json) {
@@ -63,7 +65,8 @@ class Report {
       overallCondition: json['overallCondition']?.toString(),
       imageUrl: json['imageUrl']?.toString(),
       imagePath: json['imagePath']?.toString(),
-      analyzedAt: json['date']?.toString(),
+      analyzedAt: json['analyzedAt']?.toString(),
+      isVerified: json['isVerified']?.toBool(),
     );
   }
 
@@ -86,6 +89,31 @@ class Report {
       if (imageUrl != null) 'imageUrl': imageUrl,
       if (imagePath != null) 'imagePath': imagePath,
       if (analyzedAt != null) 'analyzedAt': analyzedAt,
+      if (isVerified != null) 'isVerified': isVerified,
     };
   }
+  String debugString() {
+      return '''
+  Report Debug:
+    id: $id
+    plantName: $plantName
+    probability: $probability
+    species: $species
+    trunkRot: $trunkRot
+    trunkHoles: $trunkHoles
+    trunkCracks: $trunkCracks
+    trunkDamage: $trunkDamage
+    crownDamage: $crownDamage
+    fruitingBodies: $fruitingBodies
+    diseases: $diseases
+    dryBranchPercentage: $dryBranchPercentage
+    additionalInfo: $additionalInfo
+    overallCondition: $overallCondition
+    imageUrl: $imageUrl
+    imagePath: $imagePath
+    analyzedAt: $analyzedAt
+    isVerified: $isVerified
+  ''';
+    }
+
 }

@@ -3,6 +3,7 @@ import os
 
 ROOT_PATH: Path = Path(__file__).resolve().parent.parent
 ML_DIR = ROOT_PATH / "ML"
+WEB_DATASET_DIR = ML_DIR / 'web_data'
 CLASSIFICATION_DIR = ML_DIR / "Classification"
 DETECTION_DIR = ML_DIR / "Detection"
 DETECTION_DATASET_DIR = DETECTION_DIR / "Data"
@@ -20,6 +21,7 @@ paths = [
     YOLO_RUNS_DIR,
     RESULT_DIR,
     CLASSIFICATION_PROMPTS_DIR,
+    WEB_DATASET_DIR,
 ]
 
 for path in paths:

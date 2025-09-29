@@ -186,4 +186,12 @@ class ReportService {
     final db = await DBProvider.instance.database;
     await db.delete('reports', where: 'id = ?', whereArgs: [id]);
   }
+
+  Future<void> replaceReportKeepingId(int localReportId, Report serverReport) async {
+    final db = await DBProvider.instance.database;
+    final map = _reportToMap(serverReport);
+    map['id'] = localReportId;
+    map['isVerified'] = 1; // помечаем, что проверено сервером
+    await db.update('reports', map, where: 'id = ?', whereArgs: [localReportId]);
+  }
 }
