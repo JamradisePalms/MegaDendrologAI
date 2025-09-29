@@ -82,6 +82,7 @@ desktop.ini
 /tmp.ipynb
 tmp*
 *.json
+*.onnx
 
 # -----------------------
 # Logs

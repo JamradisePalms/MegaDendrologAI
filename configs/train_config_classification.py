@@ -46,7 +46,7 @@ class TrainConfigs:
             "has_fruits_or_flowers": 2,
         }
 
-        BATCH_SIZE = 10
-        NUM_EPOCHS = 50
+        BATCH_SIZE = 20
+        NUM_EPOCHS = 20
         LR = 1e-4
         PATH_TO_SAVE_MODEL = Path('ML/Classification/results/saved_models/hollow_classification_small.pth')
