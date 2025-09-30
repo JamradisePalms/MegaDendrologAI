@@ -17,6 +17,6 @@ class ResponseParser():
         else:
             json_lines = json_lines[2:]
         json_string = '\n'.join(json_lines)
-
+        print(json_string)
         result = json.loads(json_string)
         return result

@@ -50,6 +50,7 @@ class BaseClassifier(ABC):
                 try:
                     result = response.result()
                     results.append({**result.model_dump(), "image": image_path})
-                except:
+                except Exception as e:
+                    print(e)
                     continue
         return results
