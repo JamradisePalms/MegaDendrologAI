@@ -86,7 +86,8 @@ DATABASES = {
         'NAME': "database",
         'USER': "admin",
         'PASSWORD': "pmc",
-        'HOST': "db",
+        'HOST': "db", # на сервере
+        # "HOST": "localhost",
         'PORT': "5432"
 
     }

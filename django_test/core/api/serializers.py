@@ -5,12 +5,11 @@ from api.models import Result, Photo
 class EventInfoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Result 
-        fields = ("event_id", "user_id",
-                  "date", "tree_type",
-                  "has_cracks", "has_hollows",
-                  "has_fruits_or_flowers", "injuries",
-                  "photo_file_name", "answer")
-
+        fields = ("id", "probability", "species", "trunkRot",
+                "trunkHoles", "trunkCracks", "trunkDamage",
+                "crownDamage", "fruitingBodies", "diseases", "dryBranchPercentage",
+                "additionalInfo", "overallCondition", "imageUrl", "imagePath",
+                "analyzedAt", "isVerified")
 
 class PhotoSerializer(serializers.ModelSerializer):
     class Meta:

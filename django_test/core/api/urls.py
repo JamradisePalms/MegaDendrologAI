@@ -6,6 +6,7 @@ from . import views
 
 urlpatterns = [
     path("add/<str:user_id>", views.add_raw, name="add_field"),
+    path("edit/<str:user_id>", views.edit, name="edit_field"),
     path("show/<str:user_id>", views.get_table, name="show_table"),
     path("filter/<str:user_id>/<str:filters>/<int:count>", views.complex_filter, name="complex_filter"),
     path("sendphoto/<str:user_id>", views.save_file, name="send-photo"),
