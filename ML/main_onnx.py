@@ -66,7 +66,7 @@ def run(image: str, output_json: str = "results.json", yolo: str = "yolov11m.pt"
 
 if __name__ == "__main__":
     run(
-        image=r"C:\Users\shari\PycharmProjects\MegaDendrologAI\dataset_to_mark\82x7vXkkkVQ.jpg",
+        image=r"C:\Users\shari\OneDrive\Рабочий стол\60c07a747f88bf59a00ad1fd-1.jpg",
         output_json="results.json",
         yolo=r"C:\Users\shari\Downloads\yolo11m_on_new_data\best.onnx",
         classifier=r"C:\Users\shari\PycharmProjects\MegaDendrologAI\ML\Classification\results\saved_models\hollow_classification_small.onnx"

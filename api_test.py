@@ -9,7 +9,7 @@ from configs.paths import PathConfig
 
 CLASSIFICATION_PATHS = PathConfig.ML.Classification
 CLASSIFICATION_PROMPT_FILEPATH = CLASSIFICATION_PATHS.CLASSIFICATION_PROMPT_FILEPATH
-PATH_TO_FULL_DATASET = PathConfig.ML.PATH_TO_FULL_DATASET
+PATH_TO_FULL_DATASET = Path(r"C:\Users\shari\OneDrive\Рабочий стол\Hack-processed-data\tree_crops/")
 
 classifier = QwenImageClassifier(CLASSIFICATION_PROMPT_FILEPATH, ClassificationTreeAnalysis)
 response = classifier.run(PATH_TO_FULL_DATASET.iterdir(), max_workers=3)

@@ -69,12 +69,12 @@ class QwenImageClassifier(BaseClassifier):
                     blocks=blocks,
                 )
             ]
-
             response = client.chat.create(
                 messages=messages,
                 model="qwen3-vl-plus",
                 stream=True,
             )
+
             string_response = []
             for chunk in response:
                 delta = chunk.choices[0].delta
@@ -82,11 +82,13 @@ class QwenImageClassifier(BaseClassifier):
                     print("\nSearch results:", delta.extra.web_search_info)
                     print()
                 string_response.append(delta.content)
-
+            print(string_response)
             string_response = "".join(string_response)
+            print(string_response)
             parsed_response = self.parser.parse(string_response)
-
-            return self.pydantic_model.model_validate(parsed_response)
+            # return self.pydantic_model.model_validate(parsed_response)
+            print(parsed_response)
+            return parsed_response
         except QwenAPIError as e:
             print(f"Error: {str(e)}")
 
