@@ -71,7 +71,7 @@ class QwenImageClassifier(BaseClassifier):
             ]
             response = client.chat.create(
                 messages=messages,
-                model="qwen-vl-plus",
+                model="qwen3-vl-plus",
                 stream=True,
             )
 
@@ -82,7 +82,7 @@ class QwenImageClassifier(BaseClassifier):
                     print("\nSearch results:", delta.extra.web_search_info)
                     print()
                 string_response.append(delta.content)
-            print("HERE")
+            print(string_response)
             string_response = "".join(string_response)
             print(string_response)
             parsed_response = self.parser.parse(string_response)
