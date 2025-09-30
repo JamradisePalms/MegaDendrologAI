@@ -38,12 +38,15 @@ class TrainConfigs:
             MODEL_NAME, use_fast=True
         )
         IMAGE_JSON_FIELD = "image"
-        TARGET_JSON_FIELD = {
-            "tree_type": 16, # number of unique trees based on the QWEN reports
+        TASK_TO_OUTPUT_SIZE = {
             "has_hollow": 2,
             "has_cracks": 2,
-            # "injuries": 30, # number of unique injuries based on the QWEN reports
             "has_fruits_or_flowers": 2,
+            'overall_condition': 5,
+            'has_rot': 2,
+            'has_trunk_damage': 2,
+            'has_crown_damage': 2,
+            'dry_branch_percentage': 6,
         }
 
         BATCH_SIZE = 20

@@ -3,7 +3,7 @@ from PIL import Image
 from pathlib import Path
 from torch.utils.data import Dataset
 from sklearn.preprocessing import LabelEncoder
-from typing import List, Dict
+from typing import List, Dict, Iterable
 import pickle
 
 class BaseDataset(Dataset):
@@ -24,7 +24,7 @@ class ImageDatasetJson(BaseDataset):
         self, 
         json_path: Path, 
         image_filepath_field: str, 
-        target_fields: List[str],
+        target_fields: Iterable[str],
         label_encoders: Dict[str, LabelEncoder] = None
     ):
         self.json_path = json_path
