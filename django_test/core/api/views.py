@@ -12,6 +12,7 @@ from django.core.files import File
 from django.conf import settings
 
 import datetime
+import locale
 import os
 
 from .module import main_onnx
@@ -129,9 +130,13 @@ fields = ("id", "probability", "species", "trunkRot",
           "additionalInfo", "overallCondition", "imageUrl", "imagePath",
           "analyzedAt", "isVerified")
 
+numeric_fields = ("probability", "dryBranchPercentage")
+
+boolean_fields = ("isVerified")
+
 
 @api_view(["GET"])
-def complex_filter(request, user_id="", filters="", count=0):
+def complex_filter(request, user_id="", filters="", page=0):
     '''
     На основании фильтров в юрле делает запрос к бд и возвращает результат
     Args:
@@ -145,21 +150,33 @@ def complex_filter(request, user_id="", filters="", count=0):
     if request.method == 'GET':
         event_info = Result.objects.filter(user_id=user_id).order_by('id')
         filters = filters.split("&")
+        if page * 10 > len(event_info):
+            event_info = event_info[(page - 1) * 10:]
+        else:
+            event_info = event_info[(page - 1) * 10: page * 10]
+            event_info = event_info[(page - 1) * 10:page * 10]
+        
+        if filters == [" "] or filters == ["%20"]:
+            event_info_serializer = EventInfoSerializer(event_info, many=True)
+            return JsonResponse(event_info_serializer.data, safe=False)
+
         for i in range(len(filters)):
             filters[i] = filters[i].split("=")
             key = filters[i][0]
             if key not in fields:
                 return JsonResponse("No matching fields", safe=True)
             value = filters[i][1]
-            if "has_" in key:
+            if key in numeric_fields:
                 try:
-                    value = int(value)
+                    value = float(value)
                 except:
-                    return JsonResponse("No matching field", safe=False)
+                    return JsonResponse("ValueError", safe=True)
+            elif key in boolean_fields:
+                try:
+                    value = bool(value)
+                except:
+                    return JsonResponse("ValueError", safe=True)
             event_info = event_info.filter(**{key: value})
-        event_info = event_info.order_by('id')
-        if count < len(event_info):
-            event_info = event_info[:count]
         event_info_serializer = EventInfoSerializer(event_info, many=True)
         return JsonResponse(event_info_serializer.data, safe=False)
 
@@ -183,12 +200,21 @@ def save_file(request, user_id=""):
                 photo_serializer.save()
             image_path = os.path.join(settings.MEDIA_ROOT, str(data["image"]))
             yolo = os.path.abspath(os.path.join("api", "module", "best.onnx"))
-            classifier = os.path.abspath(os.path.join("api", "module", "hollow_classification_small.onnx"))
+            tree_classifier = os.path.abspath(os.path.join("api", "module", "tree_type.onnx"))
+            bad_things_classifier = os.path.abspath(os.path.join("api", "module", "everything.onnx"))
             cropped_image_path = settings.MEDIA_ROOT
-            result = main_onnx.run(image=image_path, yolo=yolo, classifier=classifier, cropped_image_path=cropped_image_path)
+            tree_type_result = main_onnx.run(image=image_path, yolo=yolo, classifier=tree_classifier, cropped_image_path=cropped_image_path)
+            bad_things_result = main_onnx.run(image=image_path, yolo=yolo, classifier=bad_things_classifier, cropped_image_path=cropped_image_path)
+            result = []
+
+            for i in range(len(tree_type_result)):
+                bad_things_result[i]["plantName"] = f"{tree_type_result[i]}, {bad_things_result[i]["plantName"]}"
+                result.append(bad_things_result[i].copy())
+
             for i, el in enumerate(result):
                 with open(os.path.join("photos", el["imageUrl"]), "rb") as f:
                     url = request.build_absolute_uri(settings.MEDIA_URL + el["imageUrl"])
+                    print(request.build_absolute_uri(settings.MEDIA_URL))
                     el["imageUrl"] = url
                     data = {"id": 0, "user_id": user_id, "image": File(f),
                         "uploaded_at": datetime.datetime.now(), "url": url}
@@ -199,7 +225,6 @@ def save_file(request, user_id=""):
                 event_info_data["user_id"] = user_id
                 event_info_serializer = EventInfoSerializer(data=event_info_data)
                 if event_info_serializer.is_valid():
-                    print(1)
                     event_info_serializer.save()
                 else:
                     print(event_info_serializer.errors)

@@ -4,7 +4,14 @@ import cv2
 import numpy as np
 import json
 import datetime
+import locale
 import os
+
+
+try:
+    locale.setlocale(locale.LC_TIME, 'ru_RU.UTF-8')
+except:
+    locale.setlocale(locale.LC_TIME, 'Russian_Russia.1251')
 
 
 class Pipeline:
@@ -13,7 +20,7 @@ class Pipeline:
         self.classifier = ort.InferenceSession(classifier_model, providers=['CPUExecutionProvider'])
         self.output_names = [output.name for output in self.classifier.get_outputs()]
 
-    def process(self, image_path: str, output_json: str = "results.json", conf: float = 0.3, iou: float = 0.45, cropped_image_path: str = ""):
+    def process(self, image_path: str, classifier, output_json: str = "results.json", conf: float = 0.3, iou: float = 0.45, cropped_image_path: str = ""):
         results = self.detector(image_path, conf=conf, iou=iou, device="cpu")
         
         output = []
@@ -28,8 +35,8 @@ class Pipeline:
             
             if crop.size == 0:
                 continue
-            
-            crop_processed = cv2.resize(cv2.cvtColor(crop, cv2.COLOR_BGR2RGB), (224, 224))
+
+            crop_processed = cv2.resize(cv2.cvtColor(crop, cv2.COLOR_BGR2RGB), (320, 320))
             crop_processed = crop_processed.astype(np.float32) / 255.0
             
             mean = np.array([0.485, 0.456, 0.406], dtype=np.float32)
@@ -71,31 +78,34 @@ class Pipeline:
         
         answer = []
         for el in output:
-            answer.append({
-                "id": 0,
-                "probability": 1,
-                "species": el["classification"]["tree_type"]["class_id"],
-                "trunkRot": "not now",
-                "trunkHoles": el["classification"]["has_hollow"]["class_id"],
-                "trunkCracks": el["classification"]["has_cracks"]["class_id"],
-                "trunkDamage": "not now",
-                "crownDamage": "not now",
-                "fruitingBodies": el["classification"]["has_fruits_or_flowers"]["class_id"],
-                "diseases": "wtf",
-                "dryBranchPercentage": 0,
-                "additionalInfo": "never",
-                "overallCondition": "not now",
-                "imageUrl": el["photo_name"],
-                "imagePath": "gringo",
-                "analyzedAt": datetime.datetime.now(),
-                "isVerified": True
-            })
+            if "tree_type" not in classifier:
+                d = datetime.datetime.now()
+                answer.append({
+                    "id": 0,
+                    "plantName": d.strftime("%d %B %Y года, %H:%M"),
+                    "probability": 1,
+                    "species": "hjk",
+                    "trunkRot": el["classification"]["has_rot"]["class_id"],
+                    "trunkHoles": el["classification"]["has_hollow"]["class_id"],
+                    "trunkCracks": el["classification"]["has_cracks"]["class_id"],
+                    "trunkDamage": el["classification"]["has_trunk_damage"]["class_id"],
+                    "crownDamage": el["classification"]["has_crown_damage"]["class_id"],
+                    "fruitingBodies": el["classification"]["has_fruits_or_flowers"]["class_id"],
+                    "additionalInfo": "never",
+                    "overallCondition": el["classification"]["overall_condition"]["class_id"],
+                    "imageUrl": el["photo_name"],
+                    "imagePath": "gringo",
+                    "analyzedAt": d,
+                    "isVerified": True
+                })
+            else:
+                answer.append(el["classification"]["tree_type"]["class_id"])
         
         return answer
 
 def run(image: str, output_json: str = "results.json", yolo: str = "yolov11m.pt", classifier: str = "resnet_classifier.onnx", conf: float = 0.3, iou: float = 0.45, cropped_image_path: str = ""):
     pipeline = Pipeline(yolo, classifier)
-    results = pipeline.process(image, output_json=output_json, conf=conf, iou=iou, cropped_image_path=cropped_image_path)
+    results = pipeline.process(image, classifier, output_json=output_json, conf=conf, iou=iou, cropped_image_path=cropped_image_path)
     # print(results)
     return results
 
