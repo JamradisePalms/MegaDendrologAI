@@ -1,31 +1,39 @@
 import torch
+import torchvision
 import torch.nn as nn
 from typing import Dict, List, Union, Optional
-from ML.Classification.torch_lib.ResNet import ResNetBackbone
+from ML.Classification.torch_lib.BackBones import ResNetBackbone, EfficientNetBackbone
 
-class ResNetWrapper(nn.Module):
+class MultiHeadCNNWrapper(nn.Module):
     def __init__(
         self, 
-        resnet_model: str,
+        backbone_model: str,
+        backbone_type: str = "efficientnet",  # "efficientnet" или "resnet"
         hidden_size: int = 256,
         num_output_features: Union[int, Dict[str, int]] = 2,
         num_hidden_layers: int = 1,
         dropout: float = 0.1,
         activation: str = "relu",
-        freeze_resnet: bool = False,
+        freeze_backbone: bool = False,
+        pretrained: bool = True,
     ):
-        super(ResNetWrapper, self).__init__()
+        super(MultiHeadCNNWrapper, self).__init__()
         
-        self.resnet = ResNetBackbone(model_name=resnet_model)
+        if backbone_type.lower() == "efficientnet":
+            self.backbone = EfficientNetBackbone(backbone_model, pretrained)
+            self.feature_size = self.backbone.feature_size
+        elif backbone_type.lower() == "resnet":
+            self.backbone = ResNetBackbone(backbone_model)
+            with torch.no_grad():
+                dummy_input = torch.randn(1, 3, 224, 224)
+                dummy_output = self.backbone(dummy_input)
+                dummy_output = dummy_output.view(dummy_output.size(0), -1)
+                self.feature_size = dummy_output.shape[-1]
+        else:
+            raise ValueError(f"Unsupported backbone type: {backbone_type}")
         
-        with torch.no_grad():
-            dummy_input = torch.randn(1, 3, 224, 224)
-            dummy_output = self.resnet(dummy_input)
-            dummy_output = dummy_output.view(dummy_output.size(0), -1)
-            self.feature_size = dummy_output.shape[-1]
-        
-        if freeze_resnet:
-            for param in self.resnet.parameters():
+        if freeze_backbone:
+            for param in self.backbone.parameters():
                 param.requires_grad = False
         
         self.task_names = []
@@ -88,8 +96,8 @@ class ResNetWrapper(nn.Module):
         return activations.get(activation, nn.ReLU())
     
     def forward(self, x: torch.Tensor) -> Union[torch.Tensor, Dict[str, torch.Tensor]]:
-        features = self.resnet(x)
-        if features.dim() == 4:  # [batch, channels, height, width]
+        features = self.backbone(x)
+        if features.dim() == 4:
             features = features.view(features.size(0), -1)
 
         if len(self.task_names) == 1:
@@ -98,6 +106,6 @@ class ResNetWrapper(nn.Module):
             return {task_name: self.output_layers[task_name](features) 
                    for task_name in self.task_names}
     
-    def unfreeze_resnet(self, unfreeze: bool = True):
-        for param in self.resnet.parameters():
+    def unfreeze_backbone(self, unfreeze: bool = True):
+        for param in self.backbone.parameters():
             param.requires_grad = unfreeze

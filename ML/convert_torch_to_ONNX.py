@@ -1,6 +1,6 @@
 from ultralytics import YOLO
 from configs.paths import PathConfig
-from ML.Classification.torch_lib.ResNetWrapper import ResNetWrapper
+from ML.Classification.torch_lib.ClassificationWrappers import ResNetWrapper
 from configs.train_config_classification import TrainConfigs
 import torch
 
