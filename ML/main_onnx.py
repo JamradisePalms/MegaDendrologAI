@@ -4,13 +4,18 @@ import cv2
 import numpy as np
 import json
 
+def softmax(x: np.ndarray) -> np.ndarray:
+    if x.ndim != 1:
+        x = x.view(-1)
+    return np.exp(x) / np.sum(np.exp(x))
+
 class Pipeline:
     def __init__(self, yolo_model: str, classifier_model: str):
         self.detector = YOLO(yolo_model, task="detect")
         self.classifier = ort.InferenceSession(classifier_model, providers=['CPUExecutionProvider'])
         self.output_names = [output.name for output in self.classifier.get_outputs()]
 
-    def process(self, image_path: str, output_json: str = "results.json", conf: float = 0.3, iou: float = 0.45):
+    def process(self, image_path: str, output_json: str = "results.json", conf: float = 0.3, iou: float = 0.45, resize=320):
         results = self.detector(image_path, conf=conf, iou=iou, device="cpu")
         
         output = []
@@ -23,7 +28,7 @@ class Pipeline:
             if crop.size == 0:
                 continue
             
-            crop_processed = cv2.resize(cv2.cvtColor(crop, cv2.COLOR_BGR2RGB), (224, 224))
+            crop_processed = cv2.resize(cv2.cvtColor(crop, cv2.COLOR_BGR2RGB), (resize, resize))
             crop_processed = crop_processed.astype(np.float32) / 255.0
             
             mean = np.array([0.485, 0.456, 0.406], dtype=np.float32)
@@ -44,7 +49,7 @@ class Pipeline:
                 classification_result[output_name] = {
                     'class_id': class_id,
                     'confidence': confidence,
-                    'probabilities': pred.tolist()
+                    'probabilities': (softmax(pred) * 100).tolist() # <-- Convert to percentage
                 }
             
             output.append({
@@ -58,16 +63,16 @@ class Pipeline:
         
         return output
 
-def run(image: str, output_json: str = "results.json", yolo: str = "yolov11m.pt", classifier: str = "resnet_classifier.onnx", conf: float = 0.3, iou: float = 0.45):
+def run(image: str, output_json: str = "results.json", yolo: str = "yolov11m.pt", classifier: str = "resnet_classifier.onnx", conf: float = 0.3, iou: float = 0.45, resize=320):
     pipeline = Pipeline(yolo, classifier)
-    results = pipeline.process(image, output_json=output_json, conf=conf, iou=iou)
+    results = pipeline.process(image, output_json=output_json, conf=conf, iou=iou, resize=resize)
     print(results)
     return results
 
 if __name__ == "__main__":
     run(
-        image=r"C:\Users\shari\OneDrive\Рабочий стол\60c07a747f88bf59a00ad1fd-1.jpg",
+        image=r"C:\Users\shari\OneDrive\Рабочий стол\Hack-processed-data\tree_crops\tree_000047_20200803_104422.jpg",
         output_json="results.json",
         yolo=r"C:\Users\shari\Downloads\yolo11m_on_new_data\best.onnx",
-        classifier=r"C:\Users\shari\PycharmProjects\MegaDendrologAI\ML\Classification\results\saved_models\hollow_classification_small.onnx"
+        classifier=r"C:\Users\shari\PycharmProjects\MegaDendrologAI\ML\Classification\results\saved_models\best_mobile_focal\simple_model.onnx"
     )

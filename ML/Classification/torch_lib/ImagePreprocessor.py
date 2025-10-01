@@ -14,7 +14,7 @@ class TreeImagePreprocessor:
         self.is_train = is_train
         
         self.base_transform = self._get_base_transform()
-        self.augmentations = self._get_augmentations() if is_train else None
+        self.augmentations = self._get_strong_augmentations() if is_train else None
         
     def _get_base_transform(self):
         if self.backbone_type == "efficientnet":
@@ -49,8 +49,16 @@ class TreeImagePreprocessor:
                         std=[0.229, 0.224, 0.225]
                     )
                 ])
+        
         else:
-            raise ValueError(f"Unsupported backbone type: {self.backbone_type}")
+            return transforms.Compose([
+                transforms.Resize((self.image_size, self.image_size)),
+                transforms.ToTensor(),
+                transforms.Normalize(
+                    mean=[0.485, 0.456, 0.406],
+                    std=[0.229, 0.224, 0.225]
+                )
+            ])
     
     def _get_augmentations(self):
         return A.Compose([
@@ -66,6 +74,32 @@ class TreeImagePreprocessor:
             A.CoarseDropout(max_holes=8, max_height=32, max_width=32, p=0.5),
         ])
     
+    def _get_strong_augmentations(self):
+        return A.Compose([
+            A.HorizontalFlip(p=0.5), 
+            A.VerticalFlip(p=0.3),
+            A.RandomRotate90(p=0.3), 
+            A.Rotate(limit=20, p=0.4), 
+            A.ShiftScaleRotate(shift_limit=0.1, scale_limit=0.15, rotate_limit=0, p=0.4),
+
+            A.RandomBrightnessContrast(brightness_limit=0.25, contrast_limit=0.25, p=0.5),
+            A.HueSaturationValue(hue_shift_limit=10, sat_shift_limit=15, val_shift_limit=10, p=0.3),
+            A.RandomGamma(gamma_limit=(80, 120), p=0.2),
+
+            A.OneOf([
+                A.GaussianBlur(blur_limit=(3, 5)),
+                A.MotionBlur(blur_limit=5),
+                A.MedianBlur(blur_limit=3),
+            ], p=0.3),
+            A.GaussNoise(var_limit=(10.0, 50.0), p=0.2),
+
+            A.CoarseDropout(
+                max_holes=8, max_height=30, max_width=30, 
+                min_holes=4, min_height=15, min_width=15, p=0.3
+            ),
+        ])
+
+    
     def _apply_albumentations(self, image: Image.Image) -> Image.Image:
         image_np = np.array(image)
         
@@ -76,7 +110,7 @@ class TreeImagePreprocessor:
         augmented_image_np = augmented['image']
         
         return Image.fromarray(augmented_image_np.astype(np.uint8))
-    
+
     def _apply_base_transform(self, image: Image.Image):
         if isinstance(self.base_transform, transforms.Compose):
             return self.base_transform(image)

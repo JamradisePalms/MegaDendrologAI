@@ -17,8 +17,11 @@ def augment_images_for_minority_classes(data, target_count=10, output_dir="augme
     
     class_counts = Counter([item['tree_type'] for item in data])
 
-    transform = A.Compose([
+    transform = transform = A.Compose([
         A.HorizontalFlip(p=0.5),
+        A.VerticalFlip(p=0.2),
+        A.RandomRotate90(p=0.3),
+        A.Rotate(limit=15, p=0.4),
         A.OneOf([
             A.ColorJitter(brightness=0.3, contrast=0.3, saturation=0.3, hue=0.2),
             A.ToGray(p=0.7),
@@ -26,8 +29,10 @@ def augment_images_for_minority_classes(data, target_count=10, output_dir="augme
         A.OneOf([
             A.GaussianBlur(blur_limit=(1, 3)),
             A.GaussNoise(var_limit=(10, 50)),
+            A.MotionBlur(blur_limit=3),
         ], p=0.5),
         A.CoarseDropout(max_holes=8, max_height=32, max_width=32, p=0.5),
+        A.RandomGamma(gamma_limit=(80, 120), p=0.2),
     ])
     
     augmented_data = []
@@ -134,12 +139,12 @@ def main():
     train_found, train_missing = find_image_files(train_data, images_dir)
     valid_found, valid_missing = find_image_files(valid_data, images_dir)
     
-    # train_found = augment_images_for_minority_classes(train_found, target_count=30, output_dir=output_dir)
+    train_found = augment_images_for_minority_classes(train_found, target_count=30, output_dir=output_dir)
 
-    with open('train_data.json', 'w', encoding='utf-8') as f:
+    with open('train_data_with_augs.json', 'w', encoding='utf-8') as f:
         json.dump(train_found, f, ensure_ascii=False, indent=4)
     
-    with open('valid_data.json', 'w', encoding='utf-8') as f:
+    with open('valid_data_with_augs.json', 'w', encoding='utf-8') as f:
         json.dump(valid_found, f, ensure_ascii=False, indent=4)
     
     with open('missing_files.json', 'w', encoding='utf-8') as f:
