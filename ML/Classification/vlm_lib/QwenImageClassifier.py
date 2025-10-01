@@ -86,7 +86,7 @@ class QwenImageClassifier(BaseClassifier):
             string_response = "".join(string_response)
             print(string_response)
             parsed_response = self.parser.parse(string_response)
-            # return self.pydantic_model.model_validate(parsed_response)
+            return self.pydantic_model.model_validate(parsed_response)
             print(parsed_response)
             return parsed_response
         except QwenAPIError as e:

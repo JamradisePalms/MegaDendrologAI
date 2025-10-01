@@ -62,6 +62,12 @@ task_to_optimizer = {
     for task, model in task_to_model.items()
 }
 
+best_loss_per_task = {task_name: float('inf') for task_name in task_to_output_size.keys()}
+base_dir = CURRENT_CONFIG.PATH_TO_SAVE_MODEL.parent
+base_dir.mkdir(parents=True, exist_ok=True)
+base_stem = CURRENT_CONFIG.PATH_TO_SAVE_MODEL.stem
+best_model_paths = {task_name: base_dir / f"{base_stem}_{task_name}_best.pt" for task_name in task_to_output_size.keys()}
+
 global_step = 0
 
 for epoch in range(CURRENT_CONFIG.NUM_EPOCHS):
@@ -87,17 +93,22 @@ for epoch in range(CURRENT_CONFIG.NUM_EPOCHS):
                 labels[task]
             )
             
+            current_loss = task_loss.item()
+            if current_loss < best_loss_per_task[task]:
+                best_loss_per_task[task] = current_loss
+                torch.save(model.state_dict(), best_model_paths[task])
+                writer.add_scalar(f'BestLoss/{task}_Batch', current_loss, global_step)
+            
             task_loss.backward()
             optimizer.step()
 
             global_step += 1
             writer.add_scalar(f'Loss/{task}_Batch', task_loss.item(), global_step)
 
-torch.save(model.state_dict(), CURRENT_CONFIG.PATH_TO_SAVE_MODEL)
-
 writer.close()
 
-print(f'Model saved to: {CURRENT_CONFIG.PATH_TO_SAVE_MODEL}')
+for task, path in best_model_paths.items():
+    print(f'Best model for task "{task}" saved to: {path} (best loss: {best_loss_per_task[task]:.6f})')
 print(f'Label encoders saved to: {encoders_path}')
 print(f'TensorBoard logs saved to: {log_dir}')
 print(f'To view TensorBoard, run: tensorboard --logdir={log_dir}')
