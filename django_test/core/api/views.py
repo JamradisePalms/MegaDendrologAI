@@ -194,7 +194,7 @@ def save_file(request, user_id=""):
                 photo_serializer.save()
             image_path = os.path.join(settings.MEDIA_ROOT, str(data["image"]))
             yolo = os.path.abspath(os.path.join("api", "module", "best.onnx"))
-            tree_classifier = os.path.abspath(os.path.join("api", "module", "tree_type.onnx"))
+            tree_classifier = os.path.abspath(os.path.join("api", "module", "pablo.onnx"))
             bad_things_classifier = os.path.abspath(os.path.join("api", "module", "everything_1.onnx"))
             cropped_image_path = settings.MEDIA_ROOT
             tree_type_result = main_onnx.run(image=image_path, yolo=yolo, classifier=tree_classifier, cropped_image_path=cropped_image_path)
