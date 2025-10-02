@@ -8,10 +8,12 @@ import locale
 import os
 
 
-try:
-    locale.setlocale(locale.LC_TIME, 'ru_RU.UTF-8')
-except:
-    locale.setlocale(locale.LC_TIME, 'Russian_Russia.1251')
+#try:
+#    locale.setlocale(locale.LC_TIME, 'ru_RU.UTF-8')
+#except:
+#    locale.setlocale(locale.LC_TIME, 'Russian_Russia.1251')
+#finally:
+#    pass
 
 
 class Pipeline:
@@ -53,9 +55,13 @@ class Pipeline:
                         4: 'Ива', 5: 'Каштан', 6: 'Клен остролистный', 7: 'Клен ясенелистный',
                         8: 'Липа', 9: 'Лиственница', 10: 'Осина', 11: 'Рябина', 12: 'Сосна',
                         13: 'Туя', 14: 'Ясень', 15: 'неопределено'},
-                        'has_hollow': {0: '0', 1: '1'},
-                        'has_cracks': {0: '0', 1: '1'},
-                        'has_fruits_or_flowers': {0: '0', 1: '1'}}
+                        'has_hollow': {0: 'Нет', 1: 'Да'},
+                        'has_cracks': {0: 'Нет', 1: 'Да'},
+                        'has_fruits_or_flowers': {0: 'Нет', 1: 'Да'},
+                        'has_rot': {0: 'Нет', 1: 'Да'},
+                        'has_trunk_damage': {0: 'Нет', 1: 'Да'},
+                        'has_crown_damage':{0: 'Нет', 1: 'Да'},
+                        'overall_condition': {0: '',  1: 'Аварийное', 2: 'Нездоровое', 3: 'Нормальное', 4: 'Опасное', 5: 'Хорошее'}}
             
             for j, output_name in enumerate(self.output_names):
                 pred = outputs[j][0]
@@ -83,8 +89,8 @@ class Pipeline:
                 answer.append({
                     "id": 0,
                     "plantName": d.strftime("%d %B %Y года, %H:%M"),
-                    "probability": 1,
-                    "species": "hjk",
+                    "probability": el["detection_confidence"] * 100,
+                    "species": " ",
                     "trunkRot": el["classification"]["has_rot"]["class_id"],
                     "trunkHoles": el["classification"]["has_hollow"]["class_id"],
                     "trunkCracks": el["classification"]["has_cracks"]["class_id"],
@@ -94,7 +100,7 @@ class Pipeline:
                     "additionalInfo": "never",
                     "overallCondition": el["classification"]["overall_condition"]["class_id"],
                     "imageUrl": el["photo_name"],
-                    "imagePath": "gringo",
+                    "imagePath": "no",
                     "analyzedAt": d,
                     "isVerified": True
                 })

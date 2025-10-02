@@ -8,7 +8,7 @@ class EventInfoSerializer(serializers.ModelSerializer):
         fields = ("id", "probability", "species", "trunkRot",
                 "trunkHoles", "trunkCracks", "trunkDamage",  "user_id",
                 "crownDamage", "fruitingBodies", "overallCondition",
-                "imageUrl", "imagePath", "analyzedAt", "isVerified")
+                "imageUrl", "imagePath", "analyzedAt", "isVerified", "plantName")
 
 class PhotoSerializer(serializers.ModelSerializer):
     class Meta:

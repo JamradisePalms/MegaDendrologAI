@@ -148,14 +148,8 @@ def complex_filter(request, user_id="", filters="", page=0):
         JsonResponse: JSON-массив записей в бд.
     '''
     if request.method == 'GET':
-        event_info = Result.objects.filter(user_id=user_id).order_by('id')
+        event_info = Result.objects.filter(id__range=((page - 1) * 10 , page * 10)).order_by('id')
         filters = filters.split("&")
-        if page * 10 > len(event_info):
-            event_info = event_info[(page - 1) * 10:]
-        else:
-            event_info = event_info[(page - 1) * 10: page * 10]
-            event_info = event_info[(page - 1) * 10:page * 10]
-        
         if filters == [" "] or filters == ["%20"]:
             event_info_serializer = EventInfoSerializer(event_info, many=True)
             return JsonResponse(event_info_serializer.data, safe=False)
@@ -193,28 +187,29 @@ def save_file(request, user_id=""):
         JsonResponse: "Success" при успешной валидации и сохранении записи.
     '''
     if request.method == "POST":
-            data = {"id": 0, "user_id": user_id, "image": request.data.copy()['file'],
-                    "uploaded_at": datetime.datetime.now(), "url": request.build_absolute_uri(settings.MEDIA_URL + str(request.data.copy()['file']))}
+            data = {"id": 0, "user_id": user_id, "image": request.FILES['file'],
+                    "uploaded_at": datetime.datetime.now(), "url": request.build_absolute_uri(settings.MEDIA_URL + str(request.FILES['file']))}
             photo_serializer = PhotoSerializer(data=data)
             if photo_serializer.is_valid():
                 photo_serializer.save()
             image_path = os.path.join(settings.MEDIA_ROOT, str(data["image"]))
             yolo = os.path.abspath(os.path.join("api", "module", "best.onnx"))
             tree_classifier = os.path.abspath(os.path.join("api", "module", "tree_type.onnx"))
-            bad_things_classifier = os.path.abspath(os.path.join("api", "module", "everything.onnx"))
+            bad_things_classifier = os.path.abspath(os.path.join("api", "module", "everything_1.onnx"))
             cropped_image_path = settings.MEDIA_ROOT
             tree_type_result = main_onnx.run(image=image_path, yolo=yolo, classifier=tree_classifier, cropped_image_path=cropped_image_path)
             bad_things_result = main_onnx.run(image=image_path, yolo=yolo, classifier=bad_things_classifier, cropped_image_path=cropped_image_path)
             result = []
 
             for i in range(len(tree_type_result)):
-                bad_things_result[i]["plantName"] = f"{tree_type_result[i]}, {bad_things_result[i]["plantName"]}"
+                bad_things_result[i]["plantName"] = f"{tree_type_result[i]}, {bad_things_result[i]['plantName']}"
+                bad_things_result[i]["species"] = tree_type_result[i]
                 result.append(bad_things_result[i].copy())
 
             for i, el in enumerate(result):
                 with open(os.path.join("photos", el["imageUrl"]), "rb") as f:
-                    url = request.build_absolute_uri(settings.MEDIA_URL + el["imageUrl"])
-                    print(request.build_absolute_uri(settings.MEDIA_URL))
+#                    url = request.build_absolute_uri(settings.MEDIA_URL + el["imageUrl"])
+                    url = f"http://89.169.189.195:8080{settings.MEDIA_URL + el['imageUrl']}"
                     el["imageUrl"] = url
                     data = {"id": 0, "user_id": user_id, "image": File(f),
                         "uploaded_at": datetime.datetime.now(), "url": url}
