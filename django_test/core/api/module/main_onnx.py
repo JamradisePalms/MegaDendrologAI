@@ -106,7 +106,6 @@ class Pipeline:
                     "trunkDamage": el["classification"]["has_trunk_damage"]["class_id"],
                     "crownDamage": el["classification"]["has_crown_damage"]["class_id"],
                     "fruitingBodies": el["classification"]["has_fruits_or_flowers"]["class_id"],
-                    "additionalInfo": "never",
                     "overallCondition": el["classification"]["overall_condition"]["class_id"],
                     "imageUrl": el["photo_name"],
                     "imagePath": "no",
