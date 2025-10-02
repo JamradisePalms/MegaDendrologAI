@@ -11,7 +11,7 @@ class ApiService {
   Future<List<Report>> analyzeImage(File imageFile) async {
     List<Report> reports = [];
     try {
-      final uri = Uri.parse('http://51.250.109.178:8080/sendphoto/1');
+      final uri = Uri.parse('http://89.169.189.195:8080/sendphoto/gringo');
       final request = http.MultipartRequest('POST', uri);
 
       request.files.add(await http.MultipartFile.fromPath(
@@ -58,14 +58,22 @@ class ApiService {
     String? species,
     Map<String, bool>? features,
   }) async {
-    // Заглушка — читаем локальный JSON из assets
-    final jsonString = await rootBundle.loadString('assets/mock/reports.json');
-    final List<dynamic> jsonList = json.decode(jsonString);
+    final uri = Uri.parse('http://89.169.189.195:8080/filter/gringo/page=1');
 
-    // Конвертируем в список Report
-    final reports = jsonList
-        .map((item) => Report.fromJson(item as Map<String, dynamic>))
-        .toList();
-    return reports;
+    try {
+      final response = await http.get(uri);
+
+      if (response.statusCode == 200) {
+        final List<dynamic> jsonList = json.decode(response.body);
+
+        return jsonList
+            .map((item) => Report.fromJson(item as Map<String, dynamic>))
+            .toList();
+      } else {
+        throw Exception('Ошибка запроса: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Не удалось получить отчеты: $e');
+    }
   }
 }

@@ -1,7 +1,11 @@
 // lib/services/report_service.dart
+import 'dart:io';
 import 'package:sqflite/sqflite.dart';
 import '../models/report.dart';
 import 'db_provider.dart';
+import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
+import 'connectivity_service.dart';
 
 class ReportService {
   ReportService._privateConstructor();
@@ -189,9 +193,45 @@ class ReportService {
 
   Future<void> replaceReportKeepingId(int localReportId, Report serverReport) async {
     final db = await DBProvider.instance.database;
-    final map = _reportToMap(serverReport);
-    map['id'] = localReportId;
-    map['isVerified'] = 1; // помечаем, что проверено сервером
-    await db.update('reports', map, where: 'id = ?', whereArgs: [localReportId]);
+
+    // --- проверяем: нужно ли качать картинку ---
+    if (serverReport.imageUrl != null && serverReport.imageUrl!.isNotEmpty) {
+      final hasInternet = await ConnectivityService.hasInternet();
+      if (hasInternet) {
+        try {
+          final response = await http.get(Uri.parse(serverReport.imageUrl!));
+          if (response.statusCode == 200) {
+            // сохраняем локально
+            final dir = await getApplicationDocumentsDirectory();
+            final appDir = Directory('${dir.path}/PlantGuard');
+            if (!await appDir.exists()) {
+              await appDir.create(recursive: true);
+            }
+            final filePath = '${appDir.path}/report_$localReportId.jpg';
+
+            final file = File(filePath);
+            await file.writeAsBytes(response.bodyBytes);
+
+            // готовим map только если картинка успешно скачана
+            final map = _reportToMap(serverReport);
+            map['id'] = localReportId;
+            map['isVerified'] = 1;
+            map['imagePath'] = filePath;
+
+            await db.update('reports', map, where: 'id = ?', whereArgs: [localReportId]);
+          } else {
+            print('Ошибка загрузки картинки: код ${response.statusCode}');
+          }
+        } catch (e) {
+          print('Ошибка при скачивании картинки: $e');
+        }
+      }
+    } else {
+      // если imageUrl пустой, просто обновляем остальные данные
+      final map = _reportToMap(serverReport);
+      map['id'] = localReportId;
+      map['isVerified'] = 1;
+      await db.update('reports', map, where: 'id = ?', whereArgs: [localReportId]);
+    }
   }
 }

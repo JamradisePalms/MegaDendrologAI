@@ -43,6 +43,7 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
     List<Report> reports = [];
     if (internetAvailable) {
       debugPrint('Есть интернет → используем ApiService для файла: ${savedImage.path}');
+      //reports = await _localAnalysis.analyzeImage(savedImage);
       reports = await _apiService.analyzeImage(savedImage);
     } else {
       debugPrint('Нет интернета → используем LocalAnalysis для файла: ${savedImage.path}');
@@ -50,7 +51,29 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
     }
 
     // 3. Сохраняем в кэш все отчёты
+    /*final birchReport = Report(
+      id: 778, // пока новый отчет, id будет присвоен БД
+      plantName: 'Берёза, 2 октября 2025',
+      probability: 92.5,
+      species: 'Берёза',
+      trunkRot: 'Нет',
+      trunkHoles: 'Нет',
+      trunkCracks: 'Мелкие',
+      trunkDamage: 'Нет',
+      crownDamage: 'Нет',
+      fruitingBodies: 'Нет',
+      diseases: 'Нет',
+      dryBranchPercentage: 5.0,
+      additionalInfo: 'Состояние хорошее, без видимых заболеваний',
+      overallCondition: 'Здоровое дерево',
+      imagePath: 'assets/images/20200724_115413.jpg',
+      imageUrl: null,
+      analyzedAt: DateTime.now().toIso8601String(),
+    );*/
+    
     final reportService = ReportService();
+
+    //final reportId = await reportService.saveReport(birchReport);
     for (final r in reports) {
       final reportId = await reportService.saveReport(r);
       if (!internetAvailable) {

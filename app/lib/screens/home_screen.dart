@@ -104,12 +104,26 @@ class _HomeScreenState extends State<HomeScreen> {
     bool isAndroid = !kIsWeb && Platform.isAndroid;
     bool isWindows = !kIsWeb && Platform.isWindows;
 
+    const double buttonSpacing = 6; // универсальный отступ между кнопками
+
     return Scaffold(
-      appBar: AppBar(title: const Text('PlantAnalyzer')),
+      appBar: AppBar(
+        leading: Padding(
+          padding: const EdgeInsets.all(8.0), // чтобы иконка не прилипала к краю
+          child: Image.asset(
+            'assets/images/icon_white.png',
+            width: 24,
+            height: 24,
+            fit: BoxFit.contain,
+          ),
+        ),
+        title: const Text('PlantGuard'),
+      ),
       body: Center(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
+
             if (isAndroid)
               ElevatedButton(
                 onPressed: _isProcessing ? null : _takePhoto,
@@ -121,6 +135,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       )
                     : const Text('Сделать фото'),
               ),
+
+            if (isAndroid) SizedBox(height: buttonSpacing),
+
             if (isAndroid || isWindows)
               ElevatedButton(
                 onPressed: _isProcessing
@@ -149,6 +166,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       },
                 child: const Text('Выбрать фото с устройства'),
               ),
+
+            SizedBox(height: buttonSpacing),
+
             ElevatedButton(
               onPressed: () => _openHistory(context),
               child: const Text('История отчетов'),
@@ -156,6 +176,8 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
+
     );
   }
+
 }

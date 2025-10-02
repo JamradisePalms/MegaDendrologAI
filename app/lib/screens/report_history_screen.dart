@@ -32,6 +32,17 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
     'fruitingBodies': false,
     'diseases': false,
   };
+  // словарь переводов
+  final Map<String, String> _featureLabels = {
+    'trunkRot': 'Гниль ствола',
+    'trunkHoles': 'Дупла',
+    'trunkCracks': 'Трещины',
+    'trunkDamage': 'Повреждение ствола',
+    'crownDamage': 'Повреждение кроны',
+    'fruitingBodies': 'Плодовые тела грибов',
+    'diseases': 'Болезни',
+  };
+
   void _openFilters() {
     showModalBottomSheet(
       context: context,
@@ -47,7 +58,7 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
                     // Min probability
                     TextField(
                       keyboardType: TextInputType.number,
-                      decoration: InputDecoration(labelText: 'Min Probability'),
+                      decoration: InputDecoration(labelText: 'Мин вероятность детекции растения'),
                       onChanged: (val) => setModalState(() {
                         _minProbability = double.tryParse(val);
                       }),
@@ -55,7 +66,7 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
                     // Max probability
                     TextField(
                       keyboardType: TextInputType.number,
-                      decoration: InputDecoration(labelText: 'Max Probability'),
+                      decoration: InputDecoration(labelText: 'Макс вероятность детекции растения'),
                       onChanged: (val) => setModalState(() {
                         _maxProbability = double.tryParse(val);
                       }),
@@ -64,7 +75,7 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
                     // Признаки
                     ..._featureFilters.keys.map((key) {
                       return CheckboxListTile(
-                        title: Text(key),
+                        title: Text(_featureLabels[key] ?? key), // если нет перевода, покажет ключ
                         value: _featureFilters[key],
                         onChanged: (val) {
                           setModalState(() {
@@ -74,13 +85,32 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
                       );
                     }).toList(),
                     SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        _applyFilters();
-                      },
-                      child: Text('Применить фильтры'),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            _applyFilters();
+                          },
+                          child: Text('Применить фильтры'),
+                        ),
+                        ElevatedButton(
+                          onPressed: () {
+                            setModalState(() {
+                              _minProbability = null;
+                              _maxProbability = null;
+                              _selectedSpecies = null;
+                              _featureFilters.updateAll((key, value) => false);
+                            });
+                            Navigator.pop(context); // закрываем модалку
+                            _applyFilters();        // сразу применяем сброс
+                          },
+                          child: Text('Сбросить'),
+                        ),
+                      ],
                     ),
+
                   ],
                 ),
               ),
@@ -94,6 +124,14 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
   void _applyFilters() {
     _loadReports(page: 1);
   }
+  void _resetFilters() {
+  setState(() {
+    _minProbability = null;
+    _maxProbability = null;
+    _selectedSpecies = null;
+    _featureFilters.updateAll((key, value) => false);
+  });
+}
 
 
 
@@ -204,24 +242,37 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
                     itemBuilder: (context, index) {
                       final report = _reports[index];
                       return ListTile(
-                        leading: (report.imagePath != null && report.imagePath!.isNotEmpty)
-                            ? Image.file(
+                        leading: FutureBuilder<bool>(
+                          future: ConnectivityService.hasInternet(), // твой сервис
+                          builder: (context, snapshot) {
+                            final hasInternet = snapshot.data ?? false;
+
+                            if (hasInternet &&
+                                report.imageUrl != null &&
+                                report.imageUrl!.isNotEmpty) {
+                              return Image.network(
+                                report.imageUrl!,
+                                width: 50,
+                                height: 50,
+                                fit: BoxFit.cover,
+                              );
+                            } else if (report.imagePath != null &&
+                                report.imagePath!.isNotEmpty) {
+                              return Image.file(
                                 File(report.imagePath!),
                                 width: 50,
                                 height: 50,
                                 fit: BoxFit.cover,
-                              )
-                            : (report.imageUrl != null && report.imageUrl!.isNotEmpty)
-                                ? Image.network(
-                                    report.imageUrl!,
-                                    width: 50,
-                                    height: 50,
-                                    fit: BoxFit.cover,
-                                  )
-                                : Icon(
-                                    Icons.image_not_supported,
-                                    size: 50,
-                                  ),
+                              );
+                            } else {
+                              return const Icon(
+                                Icons.image_not_supported,
+                                size: 50,
+                              );
+                            }
+                          },
+                        ),
+
 
                         title: Text(report.plantName ?? 'Неизвестное растение'),
                         subtitle: Text('Вероятность: ${report.probability ?? 0}%'),
@@ -234,16 +285,27 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
                           );
                         },
 
-                        // 🔴 Вот здесь добавляем кнопку удаления
-                        trailing: IconButton(
-                          icon: Icon(Icons.delete, color: Colors.red),
-                          onPressed: () async {
-                            if (report.id != null) {
-                              await _service.deleteReportById(report.id!);
-                              _loadReports(page: _currentPage); // обновляем список
+                        trailing: FutureBuilder<bool>(
+                          future: ConnectivityService.hasInternet(),
+                          builder: (context, snapshot) {
+                            final hasInternet = snapshot.data ?? false;
+
+                            if (hasInternet) {
+                              return const SizedBox.shrink(); // пустое место вместо null
+                            } else {
+                              return IconButton(
+                                icon: const Icon(Icons.delete, color: Color.fromARGB(255, 44, 85, 44)),
+                                onPressed: () async {
+                                  if (report.id != null) {
+                                    await _service.deleteReportById(report.id!);
+                                    _loadReports(page: _currentPage); // обновляем список
+                                  }
+                                },
+                              );
                             }
                           },
                         ),
+
                       );
                     },
                   ),
