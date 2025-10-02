@@ -58,9 +58,29 @@ class ApiService {
     String? species,
     Map<String, bool>? features,
   }) async {
-    final uri = Uri.parse('http://89.169.189.195:8080/filter/gringo/page=1');
-
     try {
+      String filterPart = '';
+
+      if (features != null && features.isNotEmpty) {
+        final activeFilters = features.entries
+            .where((entry) => entry.value == true)
+            .map((entry) => '${entry.key}=1')
+            .toList();
+
+        if (activeFilters.isNotEmpty) {
+          // Объединяем через "&"
+          filterPart = activeFilters.join('&');
+        }
+      }
+
+      // Если фильтров нет — оставляем пробел
+      if (filterPart.isEmpty) {
+        filterPart = ' ';
+      }
+
+      final url = 'http://89.169.189.195:8080/filter/gringo/$filterPart/$page';
+      final uri = Uri.parse(url);
+
       final response = await http.get(uri);
 
       if (response.statusCode == 200) {
@@ -76,4 +96,6 @@ class ApiService {
       throw Exception('Не удалось получить отчеты: $e');
     }
   }
+
+
 }

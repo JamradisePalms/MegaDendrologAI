@@ -43,7 +43,9 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
     'diseases': 'Болезни',
   };
 
-  void _openFilters() {
+  void _openFilters() async {
+    final hasInternet = await ConnectivityService.hasInternet();
+
     showModalBottomSheet(
       context: context,
       builder: (context) {
@@ -55,27 +57,34 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
               child: SingleChildScrollView(
                 child: Column(
                   children: [
-                    // Min probability
-                    TextField(
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(labelText: 'Мин вероятность детекции растения'),
-                      onChanged: (val) => setModalState(() {
-                        _minProbability = double.tryParse(val);
-                      }),
-                    ),
-                    // Max probability
-                    TextField(
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(labelText: 'Макс вероятность детекции растения'),
-                      onChanged: (val) => setModalState(() {
-                        _maxProbability = double.tryParse(val);
-                      }),
-                    ),
-                    SizedBox(height: 16),
+                    // Поля мин/макс вероятности отображаем только если нет интернета
+                    if (!hasInternet) ...[
+                      TextField(
+                        keyboardType: TextInputType.number,
+                        decoration: InputDecoration(
+                          labelText: 'Мин вероятность детекции растения',
+                        ),
+                        onChanged: (val) => setModalState(() {
+                          _minProbability = double.tryParse(val);
+                        }),
+                      ),
+                      SizedBox(height: 8),
+                      TextField(
+                        keyboardType: TextInputType.number,
+                        decoration: InputDecoration(
+                          labelText: 'Макс вероятность детекции растения',
+                        ),
+                        onChanged: (val) => setModalState(() {
+                          _maxProbability = double.tryParse(val);
+                        }),
+                      ),
+                      SizedBox(height: 16),
+                    ],
+
                     // Признаки
                     ..._featureFilters.keys.map((key) {
                       return CheckboxListTile(
-                        title: Text(_featureLabels[key] ?? key), // если нет перевода, покажет ключ
+                        title: Text(_featureLabels[key] ?? key),
                         value: _featureFilters[key],
                         onChanged: (val) {
                           setModalState(() {
@@ -84,7 +93,9 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
                         },
                       );
                     }).toList(),
+
                     SizedBox(height: 16),
+                    // Кнопки
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
@@ -103,14 +114,13 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
                               _selectedSpecies = null;
                               _featureFilters.updateAll((key, value) => false);
                             });
-                            Navigator.pop(context); // закрываем модалку
-                            _applyFilters();        // сразу применяем сброс
+                            Navigator.pop(context);
+                            _applyFilters();
                           },
                           child: Text('Сбросить'),
                         ),
                       ],
                     ),
-
                   ],
                 ),
               ),
@@ -120,6 +130,8 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
       },
     );
   }
+
+
 
   void _applyFilters() {
     _loadReports(page: 1);
@@ -183,17 +195,28 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
       features: _featureFilters,
     );
 
-    // Можно считать totalPages на основе длины reports.json
-    final totalReports = reports.length; 
-    _totalPages = (totalReports / _limit).ceil();
-    if (_totalPages == 0) _totalPages = 1;
-
     setState(() {
-      _reports = reports;
-      _currentPage = page;
+      if (reports.isNotEmpty) {
+        _reports = reports;
+        _currentPage = page;
+      }
       _loading = false;
     });
   }
+
+  void _nextPage() async {
+    await _loadReports(page: _currentPage + 1);
+    if (_reports.isEmpty) {
+      // вернулись пустые данные → остаёмся на старой странице
+      _currentPage--;
+      await _loadReports(page: _currentPage);
+    }
+  }
+
+  void _prevPage() {
+    if (_currentPage > 1) _loadReports(page: _currentPage - 1);
+  }
+
 
 
   /// общий метод _loadReports как обертка для будущей реализации с интернетом
@@ -209,13 +232,13 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
     
   }
 
-  void _nextPage() {
+  /*void _nextPage() {
     if (_currentPage < _totalPages) _loadReports(page: _currentPage + 1);
   }
 
   void _prevPage() {
     if (_currentPage > 1) _loadReports(page: _currentPage - 1);
-  }
+  }*/
 
 
   @override
@@ -257,13 +280,14 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
                                 fit: BoxFit.cover,
                               );
                             } else if (report.imagePath != null &&
-                                report.imagePath!.isNotEmpty) {
-                              return Image.file(
-                                File(report.imagePath!),
-                                width: 50,
-                                height: 50,
-                                fit: BoxFit.cover,
-                              );
+                              report.imagePath!.isNotEmpty &&
+                              report.imagePath != 'no') {
+                            return Image.file(
+                              File(report.imagePath!),
+                              width: 50,
+                              height: 50,
+                              fit: BoxFit.cover,
+                            );
                             } else {
                               return const Icon(
                                 Icons.image_not_supported,
