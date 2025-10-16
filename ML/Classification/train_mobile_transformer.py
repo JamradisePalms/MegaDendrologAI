@@ -76,7 +76,6 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 print(f"Using device: {device}")
 
 def create_loss_weights(weights_list):
-    """Вспомогательная функция для создания тензоров весов"""
     return torch.tensor(weights_list, dtype=torch.float32).to(device)
 
 criterions = {
@@ -87,13 +86,13 @@ criterions = {
 # criterions['tree_type'] = nn.CrossEntropyLoss(weight=torch.tensor([np.float64(0.694229112833764), np.float64(0.1139383658467628), np.float64(7.462962962962963), np.float64(3.7314814814814814), np.float64(9.950617283950617), np.float64(0.35537918871252205), np.float64(2.9851851851851854), np.float64(2.2962962962962963), np.float64(4.9753086419753085), np.float64(9.950617283950617), np.float64(0.2985185185185185), np.float64(0.23691945914168136), np.float64(4.9753086419753085), np.float64(9.950617283950617), np.float64(0.8292181069958847), np.float64(9.950617283950617), np.float64(1.6584362139917694), np.float64(3.316872427983539), np.float64(3.7314814814814814), np.float64(3.316872427983539), np.float64(4.264550264550264), np.float64(7.462962962962963), np.float64(2.4876543209876543), np.float64(7.462962962962963), np.float64(7.462962962962963), np.float64(4.264550264550264), np.float64(2.132275132275132)], dtype=torch.float32).to(device))
 
 optimizer = optim.AdamW(model.parameters(), lr=CURRENT_CONFIG.LR, weight_decay=0.01)
-scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+
+scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
     optimizer, 
-    mode='min',
-    factor=0.5,
-    patience=3,
-    min_lr=1e-6,
+    T_max=CURRENT_CONFIG.NUM_EPOCHS,
+    eta_min=1e-6
 )
+
 model.to(device)
 
 PATIENCE = CURRENT_CONFIG.PATIENCE
@@ -154,6 +153,9 @@ for epoch in range(CURRENT_CONFIG.NUM_EPOCHS):
         loss_info['total_loss'] = f'{batch_loss_value:.4f}'
         progress_bar.set_postfix(loss_info)
     
+    scheduler.step()
+    current_lr = scheduler.get_last_lr()[0]
+    
     model.eval()
     val_loss_sum = 0.0
     val_batch_count = 0
@@ -191,9 +193,9 @@ for epoch in range(CURRENT_CONFIG.NUM_EPOCHS):
     if val_batch_count > 0:
         val_avg_loss = val_loss_sum / val_batch_count
         val_losses.append(val_avg_loss)
-        scheduler.step(val_avg_loss)
+        # УБРАН вызов scheduler.step(val_avg_loss) - CosineAnnealing не использует validation loss
         
-        print(f"\nEpoch {epoch + 1} - Train Loss: {epoch_avg_loss:.4f}, Val Loss: {val_avg_loss:.4f}")
+        print(f"\nEpoch {epoch + 1} - Train Loss: {epoch_avg_loss:.4f}, Val Loss: {val_avg_loss:.4f}, LR: {current_lr:.2e}")
         for task_name in task_names:
             task_avg_loss = val_task_losses[task_name] / val_batch_count
             print(f"  {task_name} Val Loss: {task_avg_loss:.4f}")

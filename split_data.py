@@ -97,7 +97,7 @@ def augment_images_for_minority_classes(data, target_count=10, output_dir="augme
     return data
 
 def main():
-    json_path = r"C:\Users\shari\PycharmProjects\MegaDendrologAI\full_fixed_data_naming.json"
+    json_path = r"C:\Users\shari\PycharmProjects\MegaDendrologAI\ML\Classification\new_data\combined_data.json"
     images_dir = r"C:\Users\shari\OneDrive\Рабочий стол\Hack-processed-data\tree_crops"
     output_dir = r"C:\Users\shari\PycharmProjects\MegaDendrologAI\ML\Classification\augmented_images"
 
@@ -139,12 +139,12 @@ def main():
     train_found, train_missing = find_image_files(train_data, images_dir)
     valid_found, valid_missing = find_image_files(valid_data, images_dir)
     
-    train_found = augment_images_for_minority_classes(train_found, target_count=30, output_dir=output_dir)
+    # train_found = augment_images_for_minority_classes(train_found, target_count=30, output_dir=output_dir)
 
-    with open('train_data_with_augs.json', 'w', encoding='utf-8') as f:
+    with open(r"C:\Users\shari\PycharmProjects\MegaDendrologAI\ML\Classification\new_data\train_data.json", 'w', encoding='utf-8') as f:
         json.dump(train_found, f, ensure_ascii=False, indent=4)
     
-    with open('valid_data_with_augs.json', 'w', encoding='utf-8') as f:
+    with open(r"C:\Users\shari\PycharmProjects\MegaDendrologAI\ML\Classification\new_data\valid_data.json", 'w', encoding='utf-8') as f:
         json.dump(valid_found, f, ensure_ascii=False, indent=4)
     
     with open('missing_files.json', 'w', encoding='utf-8') as f:

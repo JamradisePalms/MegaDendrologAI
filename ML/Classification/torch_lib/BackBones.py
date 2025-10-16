@@ -3,6 +3,7 @@ import torch.nn as nn
 import torchvision
 from transformers import ResNetModel
 import timm
+from transformers import ResNetModel, MobileViTModel
 
 class BackboneWrapper(nn.Module):
     def __init__(self):
@@ -67,22 +68,45 @@ class ResNetBackbone(nn.Module):
         outputs = self.resnet(pixel_values)
         return outputs.pooler_output
 
+# class MobileTransformerBackbone(BackboneWrapper):
+#     def __init__(self, model_name: str, pretrained: bool = True):
+#         super().__init__()
+#         self.model_name = model_name
+#         mobile_transformers = {
+#             'mobilevit_xxs': 320,
+#             'mobilevit_xs': 384,
+#             'mobilevit_s': 640,
+#         }
+#         if model_name.lower() not in mobile_transformers:
+#             raise ValueError(f"Unsupported model: {model_name}")
+#         self.model = timm.create_model(model_name, pretrained=pretrained, num_classes=0)
+#         self.feature_size = mobile_transformers[model_name.lower()]
+
+#     def forward(self, x):
+#         return self.model(x)
+
 class MobileTransformerBackbone(BackboneWrapper):
     def __init__(self, model_name: str, pretrained: bool = True):
         super().__init__()
-        self.model_name = model_name
-        mobile_transformers = {
-            'mobilevit_xxs': 320,
-            'mobilevit_xs': 384,
-            'mobilevit_s': 640,
+        
+        mobilevit_configs = {
+            'mobilevit_xxs': ('apple/mobilevit-xx-small', 320),
+            'mobilevit_xs': ('apple/mobilevit-x-small', 384),
+            'mobilevit_s': ('apple/mobilevit-small', 640),
         }
-        if model_name.lower() not in mobile_transformers:
+        
+        if model_name.lower() not in mobilevit_configs:
             raise ValueError(f"Unsupported model: {model_name}")
-        self.model = timm.create_model(model_name, pretrained=pretrained, num_classes=0)
-        self.feature_size = mobile_transformers[model_name.lower()]
-
+            
+        hf_model_name, self.feature_size = mobilevit_configs[model_name.lower()]
+        self.model = MobileViTModel.from_pretrained(hf_model_name) if pretrained else MobileViTModel.from_config()
+        
+        self.pool = nn.AdaptiveAvgPool2d(1)
+        
     def forward(self, x):
-        return self.model(x)
+        outputs = self.model(x)
+        x = self.pool(outputs.last_hidden_state)
+        return x.flatten(1)
 
 class SwinBackbone(BackboneWrapper):
     def __init__(self, model_name='swin_tiny_patch4_window7_224', pretrained=True):
@@ -95,8 +119,8 @@ class SwinBackbone(BackboneWrapper):
 class DeiTBackbone(BackboneWrapper):
     def __init__(self, model_name='deit_small_patch16_224', pretrained=True):
         super().__init__()
-        self.model = timm.create_model(model_name, pretrained=pretrained, num_classes=0)
-        self.feature_size = 384  # DeiT-Small
+        self.model = timm.create_model(model_name, pretrained=pretrained, num_classes=0, img_size=640)
+        self.feature_size = 192  # DeiT-Small
     def forward(self, x):
         return self.model(x)
 

@@ -11,7 +11,6 @@ class ImageCollator:
 
     def __call__(self, batch):
         images, labels_dict = zip(*batch)
-        
         pixel_values = torch.stack(images)
         
         labels = {}

@@ -2,6 +2,7 @@ import json
 from PIL import Image
 from pathlib import Path
 from torch.utils.data import Dataset
+import torch
 from sklearn.preprocessing import LabelEncoder
 from typing import List, Dict, Callable
 import pickle
@@ -52,7 +53,7 @@ class ImageDatasetJson(BaseDataset):
                 self.label_mappings[field] = mapping
         else:
             self.label_mappings = label_mappings
-        
+
         self.reverse_mappings = {}
         for field, mapping in self.label_mappings.items():
             self.reverse_mappings[field] = {v: k for k, v in mapping.items()}
