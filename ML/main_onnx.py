@@ -193,7 +193,7 @@ class Pipeline:
         state["vlm_verdict"] = False
         return state
 
-    def process(self, image_path: str, output_json: str = "results.json", conf: float = 0.3, iou: float = 0.45, resize=320, device="cpu", vlm_validate=False, max_vlm_attempts: int = 5):
+    def process(self, image_path: str, output_json: str = "results.json", conf: float = 0.3, iou: float = 0.45, resize=320, device="cpu", vlm_validate=False, max_vlm_attempts: int = 5, is_cropped_by_user=False):
         self._run_params.update({
             "conf": conf,
             "iou": iou,
@@ -203,7 +203,7 @@ class Pipeline:
         })
 
         init_state: State = {
-            "is_cropped_by_user": False,
+            "is_cropped_by_user": is_cropped_by_user,
             "image_path": image_path,
             "cropped_image": "",
             "vlm_validate": vlm_validate,
@@ -227,6 +227,7 @@ def run(
     output_json: str = "results.json",
     yolo: str = "yolov11m.pt",
     classifier: str = "resnet_classifier.onnx",
+    is_cropped_by_user: bool = False,
     conf: float = 0.3,
     iou: float = 0.45,
     resize=320,
@@ -236,7 +237,7 @@ def run(
     max_vlm_attempts=5
 ):
     pipeline = Pipeline(yolo, classifier, vlm_model=vlm, device=device)
-    results = pipeline.process(image_path=image, output_json=output_json, conf=conf, iou=iou, resize=resize, device=device, vlm_validate=vlm_validate, max_vlm_attempts=max_vlm_attempts)
+    results = pipeline.process(image_path=image, output_json=output_json, conf=conf, iou=iou, resize=resize, device=device, vlm_validate=vlm_validate, max_vlm_attempts=max_vlm_attempts, is_cropped_by_user=is_cropped_by_user)
     print(json.dumps(results, indent=2, ensure_ascii=False))
     return results
 
