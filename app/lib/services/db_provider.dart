@@ -94,7 +94,7 @@ class DBProvider {
       await db.execute('ALTER TABLE reports ADD COLUMN imageUrl TEXT');
       await db.execute('ALTER TABLE reports ADD COLUMN analyzedAt TEXT');
     }
-    if (oldVersion < 4) {
+    if (oldVersion < 3) {
     // добавляем isVerified в reports
     await db.execute('ALTER TABLE reports ADD COLUMN isVerified INTEGER DEFAULT 0');
     // создаём таблицу очереди если ранее не было

@@ -4,7 +4,16 @@ import cv2
 import numpy as np
 import json
 import datetime
+import locale
 import os
+
+
+#try:
+#    locale.setlocale(locale.LC_TIME, 'ru_RU.UTF-8')
+#except:
+#    locale.setlocale(locale.LC_TIME, 'Russian_Russia.1251')
+#finally:
+#    pass
 
 
 class Pipeline:
@@ -13,7 +22,7 @@ class Pipeline:
         self.classifier = ort.InferenceSession(classifier_model, providers=['CPUExecutionProvider'])
         self.output_names = [output.name for output in self.classifier.get_outputs()]
 
-    def process(self, image_path: str, output_json: str = "results.json", conf: float = 0.3, iou: float = 0.45, cropped_image_path: str = ""):
+    def process(self, image_path: str, classifier, output_json: str = "results.json", conf: float = 0.3, iou: float = 0.45, cropped_image_path: str = ""):
         results = self.detector(image_path, conf=conf, iou=iou, device="cpu")
         
         output = []
@@ -28,8 +37,12 @@ class Pipeline:
             
             if crop.size == 0:
                 continue
-            
-            crop_processed = cv2.resize(cv2.cvtColor(crop, cv2.COLOR_BGR2RGB), (224, 224))
+
+            if "pablo" not in classifier:
+                crop_processed = cv2.resize(cv2.cvtColor(crop, cv2.COLOR_BGR2RGB), (320, 320))
+            else:
+                crop_processed = cv2.resize(cv2.cvtColor(crop, cv2.COLOR_BGR2RGB), (224, 224))
+
             crop_processed = crop_processed.astype(np.float32) / 255.0
             
             mean = np.array([0.485, 0.456, 0.406], dtype=np.float32)
@@ -42,13 +55,22 @@ class Pipeline:
             outputs = self.classifier.run(None, {'input': crop_processed})
             classification_result = {}
 
-            types = {'tree_type': {0: 'Береза', 1: 'Вяз', 2: 'Дуб', 3: 'Ель',
-                        4: 'Ива', 5: 'Каштан', 6: 'Клен остролистный', 7: 'Клен ясенелистный',
-                        8: 'Липа', 9: 'Лиственница', 10: 'Осина', 11: 'Рябина', 12: 'Сосна',
-                        13: 'Туя', 14: 'Ясень', 15: 'неопределено'},
-                        'has_hollow': {0: '0', 1: '1'},
-                        'has_cracks': {0: '0', 1: '1'},
-                        'has_fruits_or_flowers': {0: '0', 1: '1'}}
+            types = {'tree_type':{0: 'Не определено', 1: 'Береза', 2: 'Берёза',  3: 'Боярышник',
+                                  4: 'Вяз', 5: 'Дерен белый', 6: 'Дуб',
+                                  7: 'Ель', 8: 'Ива', 9: 'Карагана древовидная',
+                                  10: 'Кизильник', 11: 'Клен остролистный', 12: 'Клен ясенелистный',
+                                  13: 'Клён остролистный', 14: 'Клён ясенелистный', 15: 'Лапчатка кустарниковая',
+                                  16: 'Лещина', 17: 'Липа', 18: 'Лиственница', 19: 'Не определено',
+                                  20: 'Осина', 21: 'Пузыреплодник калинолистный', 22: 'Роза морщинистая',
+                                  23: 'Роза собачья', 24: 'Рябина', 25: 'Сирень обыкновенная',
+                                  26: 'Сосна', 27: 'Спирея', 28: 'Туя', 29: 'Чубушник', 30: 'Ясень'},
+                        'has_hollow': {0: 'Нет', 1: 'Да'},
+                        'has_cracks': {0: 'Нет', 1: 'Да'},
+                        'has_fruits_or_flowers': {0: 'Нет', 1: 'Да'},
+                        'has_rot': {0: 'Нет', 1: 'Да'},
+                        'has_trunk_damage': {0: 'Нет', 1: 'Да'},
+                        'has_crown_damage':{0: 'Нет', 1: 'Да'},
+                        'overall_condition': {0: '',  1: 'Аварийное', 2: 'Нездоровое', 3: 'Нормальное', 4: 'Опасное', 5: 'Хорошее'}}
             
             for j, output_name in enumerate(self.output_names):
                 pred = outputs[j][0]
@@ -71,31 +93,33 @@ class Pipeline:
         
         answer = []
         for el in output:
-            answer.append({
-                "id": 0,
-                "probability": 1,
-                "species": el["classification"]["tree_type"]["class_id"],
-                "trunkRot": "not now",
-                "trunkHoles": el["classification"]["has_hollow"]["class_id"],
-                "trunkCracks": el["classification"]["has_cracks"]["class_id"],
-                "trunkDamage": "not now",
-                "crownDamage": "not now",
-                "fruitingBodies": el["classification"]["has_fruits_or_flowers"]["class_id"],
-                "diseases": "wtf",
-                "dryBranchPercentage": 0,
-                "additionalInfo": "never",
-                "overallCondition": "not now",
-                "imageUrl": el["photo_name"],
-                "imagePath": "gringo",
-                "analyzedAt": datetime.datetime.now(),
-                "isVerified": True
-            })
+            if "pablo" not in classifier:
+                d = datetime.datetime.now()
+                answer.append({
+                    "id": 0,
+                    "plantName": d.strftime("%d %B %Y года, %H:%M"),
+                    "probability": round(el["detection_confidence"] * 100),
+                    "species": " ",
+                    "trunkRot": el["classification"]["has_rot"]["class_id"],
+                    "trunkHoles": el["classification"]["has_hollow"]["class_id"],
+                    "trunkCracks": el["classification"]["has_cracks"]["class_id"],
+                    "trunkDamage": el["classification"]["has_trunk_damage"]["class_id"],
+                    "crownDamage": el["classification"]["has_crown_damage"]["class_id"],
+                    "fruitingBodies": el["classification"]["has_fruits_or_flowers"]["class_id"],
+                    "overallCondition": el["classification"]["overall_condition"]["class_id"],
+                    "imageUrl": el["photo_name"],
+                    "imagePath": "no",
+                    "analyzedAt": d,
+                    "isVerified": True
+                })
+            else:
+                answer.append(el["classification"]["tree_type"]["class_id"])
         
         return answer
 
 def run(image: str, output_json: str = "results.json", yolo: str = "yolov11m.pt", classifier: str = "resnet_classifier.onnx", conf: float = 0.3, iou: float = 0.45, cropped_image_path: str = ""):
     pipeline = Pipeline(yolo, classifier)
-    results = pipeline.process(image, output_json=output_json, conf=conf, iou=iou, cropped_image_path=cropped_image_path)
+    results = pipeline.process(image, classifier, output_json=output_json, conf=conf, iou=iou, cropped_image_path=cropped_image_path)
     # print(results)
     return results
 

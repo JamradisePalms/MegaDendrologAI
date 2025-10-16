@@ -31,53 +31,77 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
     _analyze();
   }
   Future<void> _analyze() async {
-  try {
-    // 1. Сохраняем копию файла в постоянное хранилище
-    final docsDir = await getApplicationDocumentsDirectory();
-    final fileName = 'report_${DateTime.now().millisecondsSinceEpoch}${p.extension(widget.imageFile.path)}';
-    final savedImage = await widget.imageFile.copy(p.join(docsDir.path, fileName));
+    try {
+      // 1. Сохраняем копию файла в постоянное хранилище
+      final docsDir = await getApplicationDocumentsDirectory();
+      final fileName =
+          'report_${DateTime.now().millisecondsSinceEpoch}${p.extension(widget.imageFile.path)}';
+      final savedImage = await widget.imageFile.copy(p.join(docsDir.path, fileName));
 
-    // 2. Проверяем интернет
-    final internetAvailable = await ConnectivityService.hasInternet();
+      // 2. Проверяем интернет
+      final internetAvailable = await ConnectivityService.hasInternet();
 
-    List<Report> reports = [];
-    if (internetAvailable) {
-      debugPrint('Есть интернет → используем ApiService для файла: ${savedImage.path}');
-      reports = await _apiService.analyzeImage(savedImage);
-    } else {
-      debugPrint('Нет интернета → используем LocalAnalysis для файла: ${savedImage.path}');
-      reports = await _localAnalysis.analyzeImage(savedImage);
-    }
-
-    // 3. Сохраняем в кэш все отчёты
-    final reportService = ReportService();
-    for (final r in reports) {
-      final reportId = await reportService.saveReport(r);
-      if (!internetAvailable) {
-        await queueDao.addTask(savedImage.path, reportId);
+      List<Report> reports = [];
+      if (internetAvailable) {
+        debugPrint('Есть интернет → используем ApiService для файла: ${savedImage.path}');
+        reports = await _apiService.analyzeImage(savedImage);
+      } else {
+        debugPrint('Нет интернета → используем LocalAnalysis для файла: ${savedImage.path}');
+        reports = await _localAnalysis.analyzeImage(savedImage);
       }
-    }
 
-    if (!internetAvailable) {
-      await AnalysisQueueDao().debugPrintQueue();
-    }
+      // 3. Проверяем, есть ли отчёты
+      if (reports.isEmpty) {
+        if (!mounted) return;
+        await showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: const Text('Результат анализа'),
+            content: const Text('Деревья не найдены на изображении.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context), // закрываем диалог
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+        // Автоматически закрываем экран анализа, как при отмене
+        if (mounted) Navigator.pop(context);
+        return; // не продолжаем дальше
+      }
 
-    // 4. Переход на экран отчёта
-    if (!mounted) return;
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (_) => ReportScreen(reports: reports), // 👈 лучше сразу список
-      ),
-    );
-  } catch (e) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Ошибка анализа: $e')),
-    );
-    Navigator.pop(context);
+      // 4. Сохраняем в кэш все отчёты
+      final reportService = ReportService();
+      for (final r in reports) {
+        final reportId = await reportService.saveReport(r);
+        if (!internetAvailable) {
+          await queueDao.addTask(savedImage.path, reportId);
+        }
+      }
+
+      if (!internetAvailable) {
+        await AnalysisQueueDao().debugPrintQueue();
+      }
+
+      // 5. Переход на экран отчёта
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ReportScreen(reports: reports),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Ошибка анализа: $e')),
+      );
+      Navigator.pop(context);
+    }
   }
-}
+
+
 
   @override
   Widget build(BuildContext context) {

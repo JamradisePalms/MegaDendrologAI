@@ -3,6 +3,8 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:image/image.dart' as img;
 import 'package:tflite_flutter/tflite_flutter.dart';
+import 'package:flutter/foundation.dart';
+
 
 class YoloV11Detector {
   Interpreter? _interpreter;
@@ -39,6 +41,7 @@ class YoloV11Detector {
 
     if (modelAsset != null) {
       det._interpreter = await Interpreter.fromAsset(modelAsset, options: options);
+      
     } else if (modelPath != null) {
       final bytes = File(modelPath).readAsBytesSync();
       det._interpreter = await Interpreter.fromBuffer(bytes, options: options);

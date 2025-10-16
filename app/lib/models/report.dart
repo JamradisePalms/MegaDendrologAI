@@ -66,7 +66,7 @@ class Report {
       imageUrl: json['imageUrl']?.toString(),
       imagePath: json['imagePath']?.toString(),
       analyzedAt: json['analyzedAt']?.toString(),
-      isVerified: json['isVerified']?.toBool(),
+      isVerified: json['isVerified'],
     );
   }
 
@@ -115,5 +115,49 @@ class Report {
     isVerified: $isVerified
   ''';
     }
+
+    Report copyWith({
+      int? id,
+      String? plantName,
+      double? probability,
+      String? species,
+      String? trunkRot,
+      String? trunkHoles,
+      String? trunkCracks,
+      String? trunkDamage,
+      String? crownDamage,
+      String? fruitingBodies,
+      String? diseases,
+      double? dryBranchPercentage,
+      String? additionalInfo,
+      String? overallCondition,
+      String? imageUrl,
+      String? imagePath,
+      String? analyzedAt,
+      bool? isVerified,
+    }) {
+      
+      return Report(
+        id: id ?? this.id,
+        plantName: plantName ?? this.plantName,
+        probability: probability ?? this.probability,
+        species: species ?? this.species,
+        trunkRot: trunkRot ?? this.trunkRot,
+        trunkHoles: trunkHoles ?? this.trunkHoles,
+        trunkCracks: trunkCracks ?? this.trunkCracks,
+        trunkDamage: trunkDamage ?? this.trunkDamage,
+        crownDamage: crownDamage ?? this.crownDamage,
+        fruitingBodies: fruitingBodies ?? this.fruitingBodies,
+        diseases: diseases ?? this.diseases,
+        dryBranchPercentage: dryBranchPercentage ?? this.dryBranchPercentage,
+        additionalInfo: additionalInfo ?? this.additionalInfo,
+        overallCondition: overallCondition ?? this.overallCondition,
+        imageUrl: imageUrl ?? this.imageUrl,
+        imagePath: imagePath ?? this.imagePath,
+        analyzedAt: analyzedAt ?? this.analyzedAt,
+        isVerified: isVerified ?? this.isVerified,
+      );
+    }
+
 
 }

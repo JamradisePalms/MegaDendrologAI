@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.example" "\0"
-            VALUE "FileDescription", "plant_analyzer" "\0"
+            VALUE "CompanyName", "MonochromeWaveSoftware" "\0"
+            VALUE "FileDescription", "PlantGuard" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "plant_analyzer" "\0"
+            VALUE "InternalName", "PlantGuard" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2025 com.example. All rights reserved." "\0"
-            VALUE "OriginalFilename", "plant_analyzer.exe" "\0"
-            VALUE "ProductName", "plant_analyzer" "\0"
+            VALUE "OriginalFilename", "PlantGuard.exe" "\0"
+            VALUE "ProductName", "PlantGuard" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

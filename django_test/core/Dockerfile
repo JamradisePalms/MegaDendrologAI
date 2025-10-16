@@ -9,6 +9,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential gcc libpq-dev netcat-traditional curl \
  && rm -rf /var/lib/apt/lists/*
 
+RUN apt-get update && apt-get install -y \
+    libgl1 \
+    libglib2.0-0 \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN apt-get update && apt-get install -y locales
+
 COPY ./requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -r /app/requirements.txt
 
