@@ -1,22 +1,25 @@
 class Report {
   final int? id;
-  final String? plantName;
-  final double? probability;
-  final String? species;
-  final String? trunkRot;
-  final String? trunkHoles;
-  final String? trunkCracks;
-  final String? trunkDamage;
-  final String? crownDamage;
-  final String? fruitingBodies;
-  final String? diseases;
-  final double? dryBranchPercentage;
-  final String? additionalInfo;
-  final String? overallCondition;
+  String? plantName;
+  double? probability;
+  String? species;
+  String? trunkRot;
+  String? trunkHoles;
+  String? trunkCracks;
+  String? trunkDamage;
+  String? crownDamage;
+  String? fruitingBodies;
+  String? diseases;
+  double? dryBranchPercentage;
+  String? additionalInfo;
+  String? overallCondition;
   final String? imageUrl;
-  final String? imagePath;
+  String? imagePath;
   final String? analyzedAt;
   final bool? isVerified;
+
+  // ✅ новое поле геоданные
+  String? geoData;
 
   Report({
     this.id,
@@ -37,6 +40,7 @@ class Report {
     this.imagePath,
     this.analyzedAt,
     this.isVerified,
+    this.geoData, 
   });
 
   factory Report.fromJson(Map<String, dynamic> json) {
@@ -67,6 +71,7 @@ class Report {
       imagePath: json['imagePath']?.toString(),
       analyzedAt: json['analyzedAt']?.toString(),
       isVerified: json['isVerified'],
+      geoData: json['geoData']?.toString(), // добавляем из JSON
     );
   }
 
@@ -90,74 +95,76 @@ class Report {
       if (imagePath != null) 'imagePath': imagePath,
       if (analyzedAt != null) 'analyzedAt': analyzedAt,
       if (isVerified != null) 'isVerified': isVerified,
+      if (geoData != null) 'geoData': geoData,
     };
   }
+
   String debugString() {
-      return '''
-  Report Debug:
-    id: $id
-    plantName: $plantName
-    probability: $probability
-    species: $species
-    trunkRot: $trunkRot
-    trunkHoles: $trunkHoles
-    trunkCracks: $trunkCracks
-    trunkDamage: $trunkDamage
-    crownDamage: $crownDamage
-    fruitingBodies: $fruitingBodies
-    diseases: $diseases
-    dryBranchPercentage: $dryBranchPercentage
-    additionalInfo: $additionalInfo
-    overallCondition: $overallCondition
-    imageUrl: $imageUrl
-    imagePath: $imagePath
-    analyzedAt: $analyzedAt
-    isVerified: $isVerified
-  ''';
-    }
+    return '''
+Report Debug:
+  id: $id
+  plantName: $plantName
+  probability: $probability
+  species: $species
+  trunkRot: $trunkRot
+  trunkHoles: $trunkHoles
+  trunkCracks: $trunkCracks
+  trunkDamage: $trunkDamage
+  crownDamage: $crownDamage
+  fruitingBodies: $fruitingBodies
+  diseases: $diseases
+  dryBranchPercentage: $dryBranchPercentage
+  additionalInfo: $additionalInfo
+  overallCondition: $overallCondition
+  imageUrl: $imageUrl
+  imagePath: $imagePath
+  analyzedAt: $analyzedAt
+  isVerified: $isVerified
+  geoData: $geoData
+''';
+  }
 
-    Report copyWith({
-      int? id,
-      String? plantName,
-      double? probability,
-      String? species,
-      String? trunkRot,
-      String? trunkHoles,
-      String? trunkCracks,
-      String? trunkDamage,
-      String? crownDamage,
-      String? fruitingBodies,
-      String? diseases,
-      double? dryBranchPercentage,
-      String? additionalInfo,
-      String? overallCondition,
-      String? imageUrl,
-      String? imagePath,
-      String? analyzedAt,
-      bool? isVerified,
-    }) {
-      
-      return Report(
-        id: id ?? this.id,
-        plantName: plantName ?? this.plantName,
-        probability: probability ?? this.probability,
-        species: species ?? this.species,
-        trunkRot: trunkRot ?? this.trunkRot,
-        trunkHoles: trunkHoles ?? this.trunkHoles,
-        trunkCracks: trunkCracks ?? this.trunkCracks,
-        trunkDamage: trunkDamage ?? this.trunkDamage,
-        crownDamage: crownDamage ?? this.crownDamage,
-        fruitingBodies: fruitingBodies ?? this.fruitingBodies,
-        diseases: diseases ?? this.diseases,
-        dryBranchPercentage: dryBranchPercentage ?? this.dryBranchPercentage,
-        additionalInfo: additionalInfo ?? this.additionalInfo,
-        overallCondition: overallCondition ?? this.overallCondition,
-        imageUrl: imageUrl ?? this.imageUrl,
-        imagePath: imagePath ?? this.imagePath,
-        analyzedAt: analyzedAt ?? this.analyzedAt,
-        isVerified: isVerified ?? this.isVerified,
-      );
-    }
-
-
+  Report copyWith({
+    int? id,
+    String? plantName,
+    double? probability,
+    String? species,
+    String? trunkRot,
+    String? trunkHoles,
+    String? trunkCracks,
+    String? trunkDamage,
+    String? crownDamage,
+    String? fruitingBodies,
+    String? diseases,
+    double? dryBranchPercentage,
+    String? additionalInfo,
+    String? overallCondition,
+    String? imageUrl,
+    String? imagePath,
+    String? analyzedAt,
+    bool? isVerified,
+    String? geoData,
+  }) {
+    return Report(
+      id: id ?? this.id,
+      plantName: plantName ?? this.plantName,
+      probability: probability ?? this.probability,
+      species: species ?? this.species,
+      trunkRot: trunkRot ?? this.trunkRot,
+      trunkHoles: trunkHoles ?? this.trunkHoles,
+      trunkCracks: trunkCracks ?? this.trunkCracks,
+      trunkDamage: trunkDamage ?? this.trunkDamage,
+      crownDamage: crownDamage ?? this.crownDamage,
+      fruitingBodies: fruitingBodies ?? this.fruitingBodies,
+      diseases: diseases ?? this.diseases,
+      dryBranchPercentage: dryBranchPercentage ?? this.dryBranchPercentage,
+      additionalInfo: additionalInfo ?? this.additionalInfo,
+      overallCondition: overallCondition ?? this.overallCondition,
+      imageUrl: imageUrl ?? this.imageUrl,
+      imagePath: imagePath ?? this.imagePath,
+      analyzedAt: analyzedAt ?? this.analyzedAt,
+      isVerified: isVerified ?? this.isVerified,
+      geoData: geoData ?? this.geoData,
+    );
+  }
 }
