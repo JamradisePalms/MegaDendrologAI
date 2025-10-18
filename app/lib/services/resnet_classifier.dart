@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'dart:math';
 import 'package:image/image.dart' as img;
 import 'package:tflite_flutter/tflite_flutter.dart';
+import 'package:flutter/foundation.dart';
 
 class ResnetClassifier {
   late Interpreter _interpreter;
@@ -32,12 +33,22 @@ class ResnetClassifier {
     newHeight = targetSize;
     newWidth = (targetSize * image.width / image.height).round();
   }
+
+  // ресайз
   img.Image resized = img.copyResize(image, width: newWidth, height: newHeight);
 
-  // center crop
+  // центр-кроп
   int left = ((resized.width - targetSize) / 2).round();
   int top = ((resized.height - targetSize) / 2).round();
-  img.Image cropped = img.copyCrop(resized, left, top, targetSize, targetSize);
+
+  img.Image cropped = img.copyCrop(
+    resized,
+    x: left,
+    y: top,
+    width: targetSize,
+    height: targetSize,
+  );
+
 
   // HWC
   List<List<List<double>>> hwc = List.generate(
@@ -54,11 +65,13 @@ class ResnetClassifier {
 
   for (int y = 0; y < targetSize; y++) {
     for (int x = 0; x < targetSize; x++) {
-      final pixel = cropped.getPixel(x, y);
-      final r = img.getRed(pixel) / 255.0;
-      final g = img.getGreen(pixel) / 255.0;
-      final b = img.getBlue(pixel) / 255.0;
-
+      final pixel = cropped.getPixel(x, y); // Pixel
+      final rnum = pixel.rNormalized;
+      final gnum = pixel.gNormalized;
+      final bnum = pixel.bNormalized;
+      double r = rnum.toDouble();
+      double g = gnum.toDouble();
+      double b = bnum.toDouble();
       rValues.add(r);
       gValues.add(g);
       bValues.add(b);
@@ -68,6 +81,8 @@ class ResnetClassifier {
       hwc[y][x][2] = b;
     }
   }
+
+
 
   // mean/std
   double mean(List<double> values) => values.reduce((a, b) => a + b) / values.length;
@@ -135,9 +150,36 @@ class ResnetClassifier {
   }
 
   /// Взять лучший класс
-  Future<String> predictLabel(img.Image image) async {
+  Future<String> getLabel(img.Image image) async {
     final results = await classify(image);
     final best = results.entries.reduce((a, b) => a.value > b.value ? a : b);
-    return "${best.key} (${(best.value * 100).toStringAsFixed(1)}%)";
+    return "${best.key}";
   }
+
+  Future<String> getTop3(img.Image image) async {
+    String resultString = "Не определено";
+
+    try {
+      final result = await classify(image); // Map<String, double>
+
+      // сортируем по вероятности
+      final sorted = result.entries.toList()
+        ..sort((a, b) => b.value.compareTo(a.value));
+
+      if (sorted.isNotEmpty) {
+        final best = sorted.first;
+        final top3 = sorted.take(3)
+            .map((e) => "${e.key} ${(e.value * 100).toStringAsFixed(1)}%")
+            .join(", ");
+
+        resultString = " $top3";
+      }
+
+    } catch (e) {
+      debugPrint('ResNet classification error: $e');
+    }
+
+    return resultString;
+  }
+
 }

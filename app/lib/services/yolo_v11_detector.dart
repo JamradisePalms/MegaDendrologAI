@@ -60,10 +60,10 @@ class YoloV11Detector {
     double iouThreshold = 0.45,
   }) async {
     if (_interpreter == null) throw StateError('Interpreter is not initialized');
-
+    debugPrint('before letterboxing');
     // 1) Letterbox resize + получить img.Image (RGB)
     final img.Image letterboxed = await _letterboxImage(image, inputSize, inputSize);
-
+    debugPrint('after letterboxing in detect');
     // 2) Подготовить input tensor: [1,640,640,3], float32 normalized 0..1
     final input = _imageToFloatInput(letterboxed);
 
@@ -98,18 +98,22 @@ class YoloV11Detector {
   /// Letterbox: ресайз с сохранением пропорций + заполнение серым (128)
   Future<img.Image> _letterboxImage(ui.Image srcImage, int targetW, int targetH) async {
     // получить RGBA байты
-    final byteData = await srcImage.toByteData(format: ui.ImageByteFormat.rawRgba);
-    if (byteData == null) throw Exception('Failed to get image bytes');
+  final byteData = await srcImage.toByteData(format: ui.ImageByteFormat.rawRgba);
+  
+  if (byteData == null) throw Exception('Failed to get image bytes');
 
-    final Uint8List rgba = byteData.buffer.asUint8List();
+  final ByteBuffer buffer = byteData.buffer; // ByteBuffer из dart:typed_data
 
-    // Конвертация в package:image Image (format rgba)
-    final img.Image original = img.Image.fromBytes(
-      srcImage.width,
-      srcImage.height,
-      rgba,
-      format: img.Format.rgba,
-    );
+  // Конвертация в package:image Image (формат RGBA)
+  final img.Image original = img.Image.fromBytes(
+    width: srcImage.width,
+    height: srcImage.height,
+    bytes: buffer,
+    bytesOffset: 0,
+    format: img.Format.uint8,
+    numChannels: 4, // RGBA
+  );
+  
 
     // Рассчитать scale
     final double scale = <double>[targetW / original.width, targetH / original.height].reduce((a, b) => a < b ? a : b);
@@ -117,18 +121,40 @@ class YoloV11Detector {
     final int newH = (original.height * scale).round();
 
     // Resize (bilinear)
-    final img.Image resized = img.copyResize(original, width: newW, height: newH, interpolation: img.Interpolation.linear);
+    final img.Image resized = img.copyResize(
+      original,
+      width: newW,
+      height: newH,
+      interpolation: img.Interpolation.linear,
+    );
+    
+    /// Создать фон и вставить по центру
 
-    // Создать фон и вставить по центру
-    final img.Image canvas = img.Image(targetW, targetH);
-    // fill with gray 128
-    img.fill(canvas, img.getColor(128, 128, 128));
+    final bgColor = img.ColorUint8.rgba(128, 128, 128, 255);
 
-    final int dx = ((targetW - newW) / 2).round();
-    final int dy = ((targetH - newH) / 2).round();
-    img.copyInto(canvas, resized, dstX: dx, dstY: dy);
+    img.Image? canvas;
+
+    
+    canvas = img.copyExpandCanvas(
+      resized,
+      newWidth: targetW,
+      newHeight: targetH,
+      position: img.ExpandCanvasPosition.center,
+      backgroundColor: bgColor,
+    );
+
+    // fallback — если не удалось, создаём вручную серый холст
+    canvas = img.Image(width: targetW, height: targetH);
+    img.fill(canvas!, color: bgColor);
+    final dx = ((targetW - resized.width) / 2).round();
+    final dy = ((targetH - resized.height) / 2).round();
+    img.compositeImage(canvas!, resized, dstX: dx, dstY: dy);
+    
 
     return canvas;
+
+
+
   }
 
   /// Конвертация img.Image -> Float32List normalized 0..1
@@ -140,20 +166,18 @@ class YoloV11Detector {
     int outIdx = 0;
     for (int y = 0; y < h; y++) {
       for (int x = 0; x < w; x++) {
-        final int pixel = image.getPixel(x, y);
-        // package:image хранит цвета в формате ABGR по умолчанию при getPixel -> use getRed/getGreen/getBlue
-        final double r = img.getRed(pixel) / 255.0;
-        final double g = img.getGreen(pixel) / 255.0;
-        final double b = img.getBlue(pixel) / 255.0;
+        final img.Pixel pixel = image.getPixel(x, y);
 
-        buffer[outIdx++] = r;
-        buffer[outIdx++] = g;
-        buffer[outIdx++] = b;
+        // берём нормализованные каналы сразу (0..1)
+        buffer[outIdx++] = pixel.rNormalized.toDouble();
+        buffer[outIdx++] = pixel.gNormalized.toDouble();
+        buffer[outIdx++] = pixel.bNormalized.toDouble();
       }
     }
 
     return buffer;
   }
+
 
   /// Постобработка выхода [1,6,anchors] -> список Detection
   List<Detection> _postprocessOutput(

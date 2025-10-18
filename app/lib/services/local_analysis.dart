@@ -9,13 +9,17 @@ import '../models/report.dart';
 import '../services/yolo_v11_detector.dart';
 import 'dart:math';
 import '../services/resnet_classifier.dart';
+import '../services/resnet_classifier_many_targets.dart';
 import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart'; // для форматирования даты
+import 'dart:typed_data';
+
 
 
 class LocalAnalysis {
   late YoloV11Detector _detector;
   late ResnetClassifier _resnetClassifier; // поле класса
+  late ResnetClassifierManyTargets _resnetClassifierManyTargets;
   bool _initialized = false;
 
   /// Инициализация модели YOLOv11 + ResNet
@@ -41,33 +45,40 @@ class LocalAnalysis {
       modelAsset: 'assets/models/simple_model_float32.tflite',
       classNames: treeClassNames,
     );
+    _resnetClassifierManyTargets = ResnetClassifierManyTargets();
+    await _resnetClassifierManyTargets.init(
+      modelAsset: 'assets/models/resnet_many_targets2.tflite',
+    );
 
     _initialized = true;
   }
 
-  Future<List<Report>> analyzeImage(File imageFile) async {
+  Future<List<Report>> analyzeImage(
+    File imageFile, {
+    bool isCroppedByUser = false,
+  }) async {
     if (!_initialized) {
       await init();
     }
+    debugPrint('initialised');
 
     final bytes = await imageFile.readAsBytes();
     final codec = await ui.instantiateImageCodec(bytes);
     final frame = await codec.getNextFrame();
     final ui.Image uiImage = frame.image;
 
-    final detections = await _detector.detect(uiImage);
-    debugPrint('DEBUG: detections count=${detections.length}');
-
     final byteData = await uiImage.toByteData(format: ui.ImageByteFormat.rawRgba);
-    if (byteData == null) {
-      return [Report(plantName: 'Ошибка', imagePath: '')];
-    }
-    final Uint8List rgba = byteData.buffer.asUint8List();
+    if (byteData == null) throw Exception('Ошибка конвертации изображения');
+
+    final ByteBuffer buffer = byteData.buffer;
+
     final img.Image baseImage = img.Image.fromBytes(
-      uiImage.width,
-      uiImage.height,
-      rgba,
-      format: img.Format.rgba,
+      width: uiImage.width,
+      height: uiImage.height,
+      bytes: buffer,
+      bytesOffset: 0,
+      format: img.Format.uint8,
+      numChannels: 4, // RGBA
     );
 
     final Directory dir = await getApplicationDocumentsDirectory();
@@ -75,76 +86,103 @@ class LocalAnalysis {
     if (!await appDir.exists()) {
       await appDir.create(recursive: true);
     }
+
     final List<Report> reports = [];
 
-    for (int i = 0; i < detections.length; i++) {
-      final det = detections[i];
+    List<dynamic> detections = [];
+    debugPrint(isCroppedByUser.toString());
+    // --- если пользователь сам обрезал изображение — пропускаем детекцию ---
+    if (!isCroppedByUser) {
+      detections = await _detector.detect(uiImage);
+      debugPrint('DEBUG: detections count=${detections.length}');
+    } else {
+      debugPrint('Пользователь обрезал изображение — детекция пропущена');
+    }
 
-      // --- вырезаем по координатам ---
-      final int x = det.x.round().clamp(0, baseImage.width - 1);
-      final int y = det.y.round().clamp(0, baseImage.height - 1);
-      final int w = det.width.round().clamp(1, baseImage.width - x);
-      final int h = det.height.round().clamp(1, baseImage.height - y);
+    // Если есть детекции — обрабатываем каждую
+    if (detections.isNotEmpty) {
+      for (int i = 0; i < detections.length; i++) {
+        final det = detections[i];
 
-      final img.Image cropped = img.copyCrop(baseImage, x, y, w, h);
+        final int x = det.x.round().clamp(0, baseImage.width - 1);
+        final int y = det.y.round().clamp(0, baseImage.height - 1);
+        final int w = det.width.round().clamp(1, baseImage.width - x);
+        final int h = det.height.round().clamp(1, baseImage.height - y);
 
-      // --- классификация через ResNet ---
-      String label = 'Не определено';
-      double probability = 0.0;
-      String top3species = 'Не определено';
-      try {
-        final result = await _resnetClassifier.classify(cropped);
+        final img.Image cropped =
+            img.copyCrop(baseImage, x: x, y: y, width: w, height: h);
 
-        // сортируем по вероятности
-        final sorted = result.entries.toList()
-          ..sort((a, b) => b.value.compareTo(a.value));
-
-        // берем лучший
-        final best = sorted.first;
-        label = best.key;
-        probability = best.value * 100;
-
-        // берём топ-3 и делаем красивую строку "Берёза (75%), Дуб (15%), Ясень (10%)"
-        final top3 = sorted.take(3).map((e) =>
-            "${e.key} ${(e.value * 100).toStringAsFixed(1)}%").join(", ");
-        top3species = top3;
-
-      } catch (e) {
-        debugPrint('ResNet classification error: $e');
+        await _processAndSaveReport(cropped, appDir, det.confidence, reports);
       }
-
-      // --- сохраняем вырезанное растение ---
-      final String outPath =
-          "${appDir.path}/plant_${DateTime.now().millisecondsSinceEpoch}_$i.png";
-      final File outFile = File(outPath);
-      await outFile.writeAsBytes(img.encodePng(cropped));
-
-      final now = DateTime.now();
-      final formattedDate = DateFormat('yyyy-MM-dd HH:mm').format(now);
-
-      reports.add(
-        Report(
-          plantName: "$label $formattedDate",   // лучший класс + дата
-          probability: double.parse((det.confidence * 100).toStringAsFixed(2)),
-          species: top3species,                 // теперь тут топ-3
-          imagePath: outFile.path,
-        ),
-      );
-
-
+    } else if (isCroppedByUser){
+      // --- если пользователь сам кропнул ---
+      await _processAndSaveReport(baseImage, appDir, 1.0, reports);
     }
-
-    if (reports.isEmpty) {
-      reports.add(
-        Report(
-          plantName: "Не найдено",
-          imagePath: '',
-        ),
-      );
-    }
+    else{
+      return reports;
+    } 
 
     return reports;
   }
+
+  // Вынесена логика анализа и сохранения одного растения
+  Future<void> _processAndSaveReport(
+    img.Image image,
+    Directory appDir,
+    double confidence,
+    List<Report> reports,
+  ) async {
+    String plantName = 'Не определено';
+    String top3species = 'Не определено';
+
+    top3species = await _resnetClassifier.getTop3(image);
+    plantName = await _resnetClassifier.getLabel(image);
+
+    final classificationMap =
+        await _resnetClassifierManyTargets.classify(image);
+
+    final trunkHoles =
+        _resnetClassifierManyTargets.getPropertyTrunkHoles(classificationMap);
+    final trunkCracks =
+        _resnetClassifierManyTargets.getPropertyTrunkCracks(classificationMap);
+    final fruitingBodies =
+        _resnetClassifierManyTargets.getPropertyFruitingBodies(classificationMap);
+    final overallCondition =
+        _resnetClassifierManyTargets.getPropertyOverallCondition(classificationMap);
+    final crownDamage =
+        _resnetClassifierManyTargets.getPropertyCrownDamage(classificationMap);
+    final trunkDamage =
+        _resnetClassifierManyTargets.getPropertyTrunkDamage(classificationMap);
+    final trunkRot =
+        _resnetClassifierManyTargets.getPropertyTrunkRot(classificationMap);
+
+    final String outPath =
+        "${appDir.path}/plant_${DateTime.now().millisecondsSinceEpoch}.png";
+    final File outFile = File(outPath);
+    await outFile.writeAsBytes(img.encodePng(image));
+
+    final now = DateTime.now();
+    final formattedDate = DateFormat('yyyy-MM-dd HH:mm').format(now);
+
+    reports.add(
+      Report(
+        plantName: "$plantName $formattedDate",
+        probability: double.parse((confidence * 100).toStringAsFixed(2)),
+        species: top3species,
+        trunkHoles: trunkHoles,
+        trunkCracks: trunkCracks,
+        fruitingBodies: fruitingBodies,
+        overallCondition: overallCondition,
+        crownDamage: crownDamage,
+        trunkDamage: trunkDamage,
+        trunkRot: trunkRot,
+        imagePath: outFile.path,
+        analyzedAt: formattedDate,
+        isVerified: false,
+      ),
+    );
+  }
+
 
 
 

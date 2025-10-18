@@ -16,7 +16,7 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
   final ApiService _apiService = ApiService();
   List<Report> _reports = [];
   int _currentPage = 1;
-  final int _limit = 10;
+  final int _limit = 20;
   int _totalPages = 1;
   bool _loading = false;
   // Фильтры
@@ -196,10 +196,10 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
     );
 
     setState(() {
-      if (reports.isNotEmpty) {
-        _reports = reports;
-        _currentPage = page;
-      }
+      
+      _reports = reports;
+      _currentPage = page;
+      
       _loading = false;
     });
   }
@@ -219,12 +219,13 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
 
 
 
-  /// общий метод _loadReports как обертка для будущей реализации с интернетом
+  /// общий метод _loadReports как обертка для реализации с интернетом и без
   Future<void> _loadReports({int page = 1}) async {
     final internetAvailable = await ConnectivityService.hasInternet();
     // здесь позже можно проверить интернет и вызвать онлайн/офлайн версии
     if (internetAvailable){
       await _loadOnlineReports(page: page);
+
     }
     else{
       await _loadOfflineReports(page: page);

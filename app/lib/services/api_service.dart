@@ -8,18 +8,28 @@ import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 
 class ApiService {
-  Future<List<Report>> analyzeImage(File imageFile) async {
+  Future<List<Report>> analyzeImage(
+    File imageFile, {
+    bool isCroppedByUser = false,
+  }) async {
     List<Report> reports = [];
     try {
       final uri = Uri.parse('http://89.169.189.195:8080/sendphoto/gringo');
       final request = http.MultipartRequest('POST', uri);
 
+      // Добавляем файл
       request.files.add(await http.MultipartFile.fromPath(
         'file',
         imageFile.path,
         contentType: MediaType('image', 'png'),
       ));
 
+      // Добавляем флаг (1 = true, 0 = false)
+      request.fields['is_cropped_by_user'] = isCroppedByUser ? '1' : '0';
+
+      debugPrint('Отправка запроса: is_cropped_by_user=${request.fields['is_cropped_by_user']}');
+
+      // Отправляем запрос
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
 
@@ -29,12 +39,10 @@ class ApiService {
         final decoded = json.decode(response.body);
 
         if (decoded is List) {
-          // если сервер возвращает массив
           reports = decoded
               .map((item) => Report.fromJson(item as Map<String, dynamic>))
               .toList();
         } else if (decoded is Map<String, dynamic>) {
-          // если сервер может вернуть один объект
           reports = [Report.fromJson(decoded)];
         }
 
@@ -80,7 +88,7 @@ class ApiService {
 
       final url = 'http://89.169.189.195:8080/filter/gringo/$filterPart/$page';
       final uri = Uri.parse(url);
-
+      debugPrint(url);
       final response = await http.get(uri);
 
       if (response.statusCode == 200) {
