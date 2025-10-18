@@ -97,9 +97,9 @@ def augment_images_for_minority_classes(data, target_count=10, output_dir="augme
     return data
 
 def main():
-    json_path = r"C:\Users\shari\PycharmProjects\MegaDendrologAI\ML\Classification\new_data\combined_data.json"
-    images_dir = r"C:\Users\shari\OneDrive\Рабочий стол\Hack-processed-data\tree_crops"
-    output_dir = r"C:\Users\shari\PycharmProjects\MegaDendrologAI\ML\Classification\augmented_images"
+    json_path = r"C:\Users\shari\PycharmProjects\MegaDendrologAI\NEW_DATA.json"
+    # images_dir = r"C:\Users\shari\OneDrive\Рабочий стол\Hack-processed-data\tree_crops"
+    # output_dir = r"C:\Users\shari\PycharmProjects\MegaDendrologAI\ML\Classification\augmented_images"
 
     with open(json_path, 'r', encoding='utf-8') as f:
         data = json.load(f, )
@@ -136,30 +136,30 @@ def main():
                 
         return found_data, missing_data
     
-    train_found, train_missing = find_image_files(train_data, images_dir)
-    valid_found, valid_missing = find_image_files(valid_data, images_dir)
+    # train_found, train_missing = find_image_files(train_data, images_dir)
+    # valid_found, valid_missing = find_image_files(valid_data, images_dir)
     
     # train_found = augment_images_for_minority_classes(train_found, target_count=30, output_dir=output_dir)
 
-    with open(r"C:\Users\shari\PycharmProjects\MegaDendrologAI\ML\Classification\new_data\train_data.json", 'w', encoding='utf-8') as f:
-        json.dump(train_found, f, ensure_ascii=False, indent=4)
+    with open(r"C:\Users\shari\PycharmProjects\MegaDendrologAI\NEW_DATA_TRAIN.json", 'w', encoding='utf-8') as f:
+        json.dump(train_data, f, ensure_ascii=False, indent=4)
     
-    with open(r"C:\Users\shari\PycharmProjects\MegaDendrologAI\ML\Classification\new_data\valid_data.json", 'w', encoding='utf-8') as f:
-        json.dump(valid_found, f, ensure_ascii=False, indent=4)
+    with open(r"C:\Users\shari\PycharmProjects\MegaDendrologAI\NEW_DATA_VAL.json", 'w', encoding='utf-8') as f:
+        json.dump(valid_data, f, ensure_ascii=False, indent=4)
     
-    with open('missing_files.json', 'w', encoding='utf-8') as f:
-        json.dump({
-            'train_missing': train_missing,
-            'valid_missing': valid_missing
-        }, f, ensure_ascii=False, indent=4)
+    # with open('missing_files.json', 'w', encoding='utf-8') as f:
+    #     json.dump({
+    #         'train_missing': train_missing,
+    #         'valid_missing': valid_missing
+    #     }, f, ensure_ascii=False, indent=4)
     
-    print(f"\n--- Результаты обработки ---")
-    print(f"Всего записей: {len(data)}")
-    print(f"Train выборка: {len(train_found)} записей")
-    print(f"Valid выборка: {len(valid_found)} записей")
-    print(f"Пропущено в train: {len(train_missing)} файлов")
-    print(f"Пропущено в valid: {len(valid_missing)} файлов")
-    print(f"Общее количество пропущенных файлов: {len(train_missing) + len(valid_missing)}")
+    # print(f"\n--- Результаты обработки ---")
+    # print(f"Всего записей: {len(data)}")
+    # print(f"Train выборка: {len(train_found)} записей")
+    # print(f"Valid выборка: {len(valid_found)} записей")
+    # print(f"Пропущено в train: {len(train_missing)} файлов")
+    # print(f"Пропущено в valid: {len(valid_missing)} файлов")
+    # print(f"Общее количество пропущенных файлов: {len(train_missing) + len(valid_missing)}")
 
 if __name__ == "__main__":
     main()

@@ -11,7 +11,7 @@ import torch
 # model.export(format='onnx', int8=False)
 
 
-CURRENT_CONFIG = TrainConfigs.TreeClassificationWithNewTransformers
+CURRENT_CONFIG = TrainConfigs.TreeClassificationWithMobileTransformer
 task_names = list(CURRENT_CONFIG.TARGET_JSON_FIELD.keys())
 num_classes_per_task = CURRENT_CONFIG.TARGET_JSON_FIELD
 
@@ -23,15 +23,15 @@ torch_model = MultiHeadCNNWrapper(
     dropout=0.4
 )
 
-torch_model.load_state_dict(torch.load(r"C:\Users\shari\PycharmProjects\MegaDendrologAI\ML\Classification\results\saved_models\augs_tiny_deit_trees_27class.pth"))
+torch_model.load_state_dict(torch.load(r"C:\Users\shari\PycharmProjects\MegaDendrologAI\ML\Classification\results\saved_models\best_tree_type_apple_vit_0.35\APPLE_XS_TRANSFORMER_TREE_TYPE_WEB_DATA.pth"))
 torch_model.eval()
 
-dummy_input = torch.randn(1, 3, 640, 640)
+dummy_input = torch.randn(1, 3, 320, 320)
 
 torch.onnx.export(
     model=torch_model,
     args=dummy_input,
-    f=r"C:\Users\shari\PycharmProjects\MegaDendrologAI\ML\Classification\results\saved_models\best_deit\model.onnx",
+    f=r"C:\Users\shari\PycharmProjects\MegaDendrologAI\ML\Classification\results\saved_models\best_tree_type_apple_vit_0.35\APPLE_XS_TRANSFORMER_TREE_TYPE_WEB_DATA.onnx",
     input_names=['input'],
     output_names=task_names,
     dynamo=True

@@ -61,8 +61,8 @@ model = MultiHeadCNNWrapper(
     num_output_features=num_classes_per_task,
     hidden_size=128,
     dropout=0.3,
-    freeze_backbone=True,
-    freeze_until=FREEZE_DICT[CURRENT_CONFIG.MODEL_NAME]
+    # freeze_backbone=True,
+    # freeze_until=FREEZE_DICT[CURRENT_CONFIG.MODEL_NAME]
 )
 
 

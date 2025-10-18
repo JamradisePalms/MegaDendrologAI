@@ -6,6 +6,8 @@ import cv2
 import numpy as np
 import json
 import os
+import datetime
+
 
 class State(TypedDict):
     is_cropped_by_user: bool
@@ -31,7 +33,30 @@ def softmax(x: np.ndarray) -> np.ndarray:
 
 
 mapping_dict = {
-    'tree_type': {0: 'He определено', 1: 'Береза', 2: 'Боярышник', 3: 'Вяз', 4: 'Дерен белый', 5: 'Дуб', 6: 'Ель', 7: 'Ива', 8: 'Карагана древовидная', 9: 'Кизильник', 10: 'Клен остролистный', 11: 'Клен ясенелистный', 12: 'Лапчатка кустарниковая', 13: 'Лещина', 14: 'Липа', 15: 'Лиственница', 16: 'Осина', 17: 'Пузыреплодник калинолистный', 18: 'Роза морщинистая', 19: 'Роза собачья', 20: 'Рябина', 21: 'Сирень обыкновенная', 22: 'Сосна', 23: 'Спирея', 24: 'Туя', 25: 'Чубушник', 26: 'Ясень'},
+    'tree_type': {0: 'Береза',
+   1: 'Боярышник',
+   2: 'Вяз',
+   3: 'Дерен Белый',
+   4: 'Дуб',
+   5: 'Ель',
+   6: 'Ива',
+   7: 'Карагана древовидная',
+   8: 'Кизильник',
+   9: 'Клен',
+   10: 'Лапчатка Кустарниковая',
+   11: 'Лещина',
+   12: 'Липа',
+   13: 'Лиственница',
+   14: 'Осина',
+   15: 'Пузыреплодник калинолистный',
+   16: 'Роза Морщинистая',
+   17: 'Рябина',
+   18: 'Сирень Обыкновенная',
+   19: 'Сосна',
+   20: 'Спирея',
+   21: 'Туя',
+   22: 'Чубушник',
+   23: 'Ясень'},
     'has_hollow': {0: 'No', 1: 'Yes'},
     'has_cracks': {0: 'No', 1: 'Yes'},
     'has_fruits_or_flowers': {0: 'No', 1: 'Yes'},
@@ -44,14 +69,18 @@ mapping_dict = {
 
 
 class Pipeline:
-    def __init__(self, yolo_model: str, classifier_model: str, vlm_model=None, device="cpu"):
+    def __init__(self, yolo_model: str, tree_type_classifier: str, multi_classifier: str, vlm_model=None, device="cpu", cropped_image_path: str = "./tmp"):
         self.detector = YOLO(yolo_model)
-        self.classifier = ort.InferenceSession(classifier_model, providers=["CPUExecutionProvider"])
+        self.tree_type_classifier = ort.InferenceSession(tree_type_classifier, providers=["CPUExecutionProvider"])
+        self.multi_classifier = ort.InferenceSession(multi_classifier, providers=["CPUExecutionProvider"])
         self.vlm = vlm_model
         self.device = device
+        self.cropped_image_path = cropped_image_path
 
-        self.output_names = [o.name for o in self.classifier.get_outputs()]
-        self.input_name = self.classifier.get_inputs()[0].name
+        self.output_names = [o.name for o in self.tree_type_classifier.get_outputs()]
+        self.classes_names = [o.name for o in self.multi_classifier.get_outputs()]
+
+        self.input_name = self.tree_type_classifier.get_inputs()[0].name
 
         self._run_params = {
             "conf": 0.3,
@@ -75,6 +104,7 @@ class Pipeline:
 
         self.graph = graph.compile()
 
+
     def detect(self, state: State) -> State:
         if state.get("is_cropped_by_user", False):
             image = cv2.imread(state["image_path"])
@@ -92,10 +122,14 @@ class Pipeline:
             xy = box.xyxy[0].tolist() if hasattr(box.xyxy[0], "tolist") else list(map(float, box.xyxy[0]))
             x1, y1, x2, y2 = map(int, xy)
             conf_val = float(box.conf.item()) if hasattr(box.conf, "item") else float(box.conf)
-            detection_list.append({"bbox": [x1, y1, x2, y2], "confidence": conf_val})
+            photo_name = f"img_{datetime.datetime.now()}.png"
+            # crop = image[y1:y2, x1:x2]
+            # cv2.imwrite(os.path.join(self.cropped_image_path, photo_name), crop)
+            detection_list.append({"bbox": [x1, y1, x2, y2], "confidence": conf_val, "photo_name": photo_name})
 
         state["detection_json"] = {"detections": detection_list}
         return state
+
 
     def classify(self, state: State) -> State:
         img = cv2.imread(state["image_path"])
@@ -132,7 +166,8 @@ class Pipeline:
             crop_processed = np.ascontiguousarray(crop_processed.astype(np.float32))
 
             try:
-                outputs = self.classifier.run(None, {self.input_name: crop_processed})
+                outputs = self.tree_type_classifier.run(None, {self.input_name: crop_processed})
+                multi_class_outputs = self.multi_classifier.run(None, {self.input_name: crop_processed})
             except Exception as e:
                 raise RuntimeError(f"ONNX inference failed: {e}")
 
@@ -142,20 +177,28 @@ class Pipeline:
                 pred_vec = pred[0] if pred.ndim == 2 else pred
                 class_id = int(np.argmax(pred_vec))
                 confidence = float(np.max(pred_vec))
-                probs = softmax(pred_vec)
                 classification_result[output_name] = {
                     "class_label": mapping_dict.get(output_name, {}).get(class_id, str(class_id)),
-                    "confidence": confidence,
-                    "probabilities": (probs * 100).tolist()
+                    "confidence": confidence
+                }
+
+            for j, output_name in enumerate(self.classes_names):
+                pred = multi_class_outputs[j]
+                pred_vec = pred[0] if pred.ndim == 2 else pred
+                class_id = int(np.argmax(pred_vec))
+                confidence = float(np.max(pred_vec))
+                classification_result[output_name] = {
+                    "class_label": mapping_dict.get(output_name, {}).get(class_id, str(class_id)),
+                    "confidence": confidence
                 }
 
             results_out.append({
-                "bbox": det["bbox"],
                 "classification": classification_result
             })
 
         state["classification_json"] = {"results": results_out}
         return state
+
 
     def validation_node(self, state: State) -> State:
         """
@@ -193,6 +236,7 @@ class Pipeline:
         state["vlm_verdict"] = False
         return state
 
+
     def process(self, image_path: str, output_json: str = "results.json", conf: float = 0.3, iou: float = 0.45, resize=320, device="cpu", vlm_validate=False, max_vlm_attempts: int = 5, is_cropped_by_user=False):
         self._run_params.update({
             "conf": conf,
@@ -219,35 +263,37 @@ class Pipeline:
             with open(output_json, "w", encoding="utf-8") as f:
                 json.dump(final_state.get("classification_json", {}), f, indent=2, ensure_ascii=False)
 
-        return final_state
+        return final_state['classification_json']['results']
 
 
 def run(
     image: str,
     output_json: str = "results.json",
     yolo: str = "yolov11m.pt",
-    classifier: str = "resnet_classifier.onnx",
+    tree_type_classifier: str = "resnet_classifier.onnx",
+    multi_classifier: str = "resnet_classifier.onnx",
     is_cropped_by_user: bool = False,
-    conf: float = 0.3,
+    conf: float = 0.0,
     iou: float = 0.45,
     resize=320,
     vlm=None,
     device="cpu",
     vlm_validate=False,
-    max_vlm_attempts=5
+    max_vlm_attempts=5,
+    cropped_image_path: str = "./tmp"
 ):
-    pipeline = Pipeline(yolo, classifier, vlm_model=vlm, device=device)
+    pipeline = Pipeline(yolo, tree_type_classifier, multi_classifier, vlm_model=vlm, device=device, cropped_image_path=cropped_image_path)
     results = pipeline.process(image_path=image, output_json=output_json, conf=conf, iou=iou, resize=resize, device=device, vlm_validate=vlm_validate, max_vlm_attempts=max_vlm_attempts, is_cropped_by_user=is_cropped_by_user)
-    print(json.dumps(results, indent=2, ensure_ascii=False))
     return results
 
 
 if __name__ == "__main__":
     run(
-        image=r"C:\Users\shari\OneDrive\Рабочий стол\photo_2025-10-16_19-36-34.jpg",
+        image=r"C:\Users\shari\OneDrive\Рабочий стол\photo_2025-10-18_20-39-50.jpg",
         output_json="results.json",
         yolo=r"C:\Users\shari\Downloads\yolo11m_on_new_data\best.onnx",
-        classifier=r"C:\Users\shari\PycharmProjects\MegaDendrologAI\ML\Classification\results\saved_models\best_all_classes_53\simple_model.onnx",
+        tree_type_classifier=r"C:\Users\shari\PycharmProjects\MegaDendrologAI\ML\Classification\results\saved_models\best_tree_type_apple_vit_0.35\APPLE_XS_TRANSFORMER_TREE_TYPE_WEB_DATA.onnx",
+        multi_classifier=r"C:\Users\shari\PycharmProjects\MegaDendrologAI\ML\Classification\results\saved_models\best_all_classes_53\simple_model.onnx",
         resize=320,
         conf=0.2,
         iou=0.45,
