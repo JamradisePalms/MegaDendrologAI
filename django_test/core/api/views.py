@@ -243,7 +243,7 @@ def save_file(request, user_id=""):
                     answer.append({
                         "id": 0,
                         "plantName": f"{el['classification']['tree_type']['class_label']} {d.strftime('%d %m %Y, %H:%M')}",
-                        "probability": round(el["classification"]["tree_type"]["confidence"]),
+                        "probability": round(el["classification"]["tree_type"]["confidence"], 2),
                         "species": el["classification"]["tree_type"]["class_label"],
                         "trunkRot": el["classification"]["has_rot"]["class_label"],
                         "trunkHoles": el["classification"]["has_hollow"]["class_label"],
