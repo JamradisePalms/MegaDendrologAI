@@ -7,7 +7,8 @@ import 'processing_screen.dart';
 
 class CropScreen extends StatefulWidget {
   final File imageFile;
-  const CropScreen({super.key, required this.imageFile});
+  const CropScreen({super.key, required this.imageFile, this.geoData});
+  final String? geoData;
 
   @override
   State<CropScreen> createState() => _CropScreenState();
@@ -100,7 +101,7 @@ class _CropScreenState extends State<CropScreen> {
                             context,
                             MaterialPageRoute(
                               builder: (_) =>
-                                  ProcessingScreen(imageFile: tempFile, isCroppedByUser: true),
+                                  ProcessingScreen(imageFile: tempFile, isCroppedByUser: true, geoData: widget.geoData),
                             ),
                           );
                         case CropFailure(:final cause):

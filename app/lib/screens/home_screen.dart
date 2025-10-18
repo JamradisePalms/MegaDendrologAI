@@ -6,6 +6,8 @@ import 'package:file_picker/file_picker.dart';
 import 'processing_screen.dart';
 import 'package:plant_analyzer/screens/report_history_screen.dart';
 import 'crop_screen.dart';
+import 'package:geolocator/geolocator.dart';
+
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -49,8 +51,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  /// Съемка фото на Android — теперь реализовано
-  Future<void> _takePhoto() async {
+    Future<void> _takePhoto() async {
     if (kIsWeb || !Platform.isAndroid) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Съемка фото поддерживается только на Android в этом экране')),
@@ -64,11 +65,10 @@ class _HomeScreenState extends State<HomeScreen> {
       final XFile? picked = await _picker.pickImage(
         source: ImageSource.camera,
         preferredCameraDevice: CameraDevice.rear,
-        imageQuality: 85, // компрессия, 0-100 (опционально)
+        imageQuality: 85,
       );
 
       if (picked == null) {
-        // пользователь отменил
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Съемка отменена')),
@@ -79,14 +79,26 @@ class _HomeScreenState extends State<HomeScreen> {
 
       final File imageFile = File(picked.path);
 
+      // ✅ Получение геопозиции устройства
+      String? geoData;
+      final position = await _getCurrentPosition();
+      debugPrint('position: $position');
+      if (position != null) {
+        geoData = '${position.latitude}, ${position.longitude}';
+        debugPrint('geoData: $geoData');
+      }
+
       if (!mounted) return;
+
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => CropScreen(imageFile: imageFile),
+          builder: (_) => ProcessingScreen(
+            imageFile: imageFile,
+            geoData: geoData, // передаем координаты
+          ),
         ),
       );
-
     } catch (e) {
       debugPrint('Ошибка при съемке: $e');
       if (mounted) {
@@ -98,6 +110,56 @@ class _HomeScreenState extends State<HomeScreen> {
       if (mounted) setState(() => _isProcessing = false);
     }
   }
+
+  /// Получение текущей позиции устройства через Geolocator
+  Future<Position?> _getCurrentPosition() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    // Проверка, включена ли служба геолокации
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      debugPrint('Служба геолокации выключена.');
+      return null;
+    }
+
+    // Проверка и запрос разрешений
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        debugPrint('Разрешение на геолокацию отклонено');
+        return null;
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      debugPrint('Разрешение на геолокацию отклонено навсегда');
+      return null;
+    }
+
+    // Получение позиции
+    LocationSettings locationSettings;
+    if (Platform.isAndroid) {
+      locationSettings = AndroidSettings(
+        accuracy: LocationAccuracy.high,
+        distanceFilter: 0,
+      );
+    } else if (Platform.isIOS) {
+      locationSettings = AppleSettings(
+        accuracy: LocationAccuracy.high,
+        distanceFilter: 0,
+      );
+    } else {
+      locationSettings = const LocationSettings(
+        accuracy: LocationAccuracy.high,
+      );
+    }
+
+    return await Geolocator.getCurrentPosition(locationSettings: locationSettings);
+  }
+
+
 
   @override
   Widget build(BuildContext context) {

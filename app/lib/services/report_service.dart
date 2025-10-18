@@ -39,6 +39,7 @@ class ReportService {
       'additionalInfo': r.additionalInfo,
       'imagePath': r.imagePath,
       'imageUrl': r.imageUrl,
+      'geoData': r.geoData
     };
   }
 
@@ -59,6 +60,7 @@ class ReportService {
       additionalInfo: m['additionalInfo'] as String?,
       imagePath: m['imagePath'] as String?,
       imageUrl: m['imageUrl'] as String?,
+      geoData: m['geoData'] as String?
     );
   }
 

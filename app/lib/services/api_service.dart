@@ -11,6 +11,7 @@ class ApiService {
   Future<List<Report>> analyzeImage(
     File imageFile, {
     bool isCroppedByUser = false,
+    String? geoData
   }) async {
     List<Report> reports = [];
     try {

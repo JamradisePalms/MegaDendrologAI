@@ -14,17 +14,20 @@ import 'crop_screen.dart';
 
 class ProcessingScreen extends StatefulWidget {
   final File imageFile;
-  final bool isCroppedByUser; // 👈 новый параметр
+  final bool isCroppedByUser;
+  final String? geoData; 
 
   const ProcessingScreen({
     super.key,
     required this.imageFile,
-    this.isCroppedByUser = false, // 👈 по умолчанию false
+    this.isCroppedByUser = false,
+    this.geoData, 
   });
 
   @override
   _ProcessingScreenState createState() => _ProcessingScreenState();
 }
+
 
 class _ProcessingScreenState extends State<ProcessingScreen> {
   final ApiService _apiService = ApiService();
@@ -50,7 +53,7 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
       List<Report> reports = [];
       if (internetAvailable) {
         debugPrint('Есть интернет → используем ApiService для файла: ${savedImage.path}');
-        reports = await _apiService.analyzeImage(savedImage);
+        reports = await _apiService.analyzeImage(savedImage, isCroppedByUser: widget.isCroppedByUser, geoData: widget.geoData);
         //reports = await _localAnalysis.analyzeImage(savedImage);
       } else {
         debugPrint('Нет интернета → используем LocalAnalysis для файла: ${savedImage.path}');
@@ -58,6 +61,7 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
         reports = await _localAnalysis.analyzeImage(
           savedImage,
           isCroppedByUser: widget.isCroppedByUser,
+          geoData: widget.geoData
         );
 
       }
@@ -84,7 +88,7 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (_) => CropScreen(imageFile: savedImage),
+            builder: (_) => CropScreen(imageFile: savedImage, geoData: widget.geoData),
           ),
         );
       }
@@ -94,6 +98,7 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
       // 4. Сохраняем в кэш все отчёты
       final reportService = ReportService();
       for (final r in reports) {
+        debugPrint('Сохраняем отчёт: ${r.debugString()}');
         final reportId = await reportService.saveReport(r);
         if (!internetAvailable) {
           await queueDao.addTask(savedImage.path, reportId);

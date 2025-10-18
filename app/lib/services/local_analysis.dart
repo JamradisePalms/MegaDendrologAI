@@ -56,6 +56,7 @@ class LocalAnalysis {
   Future<List<Report>> analyzeImage(
     File imageFile, {
     bool isCroppedByUser = false,
+    String? geoData
   }) async {
     if (!_initialized) {
       await init();
@@ -112,11 +113,13 @@ class LocalAnalysis {
         final img.Image cropped =
             img.copyCrop(baseImage, x: x, y: y, width: w, height: h);
 
-        await _processAndSaveReport(cropped, appDir, det.confidence, reports);
+        await _processAndSaveReport(cropped, appDir, det.confidence, reports, geoData);
+        debugPrint("geodata: $geoData");
       }
     } else if (isCroppedByUser){
       // --- если пользователь сам кропнул ---
-      await _processAndSaveReport(baseImage, appDir, 1.0, reports);
+      await _processAndSaveReport(baseImage, appDir, 1.0, reports, geoData);
+      debugPrint("geodata: $geoData");
     }
     else{
       return reports;
@@ -131,6 +134,7 @@ class LocalAnalysis {
     Directory appDir,
     double confidence,
     List<Report> reports,
+    String? geoData
   ) async {
     String plantName = 'Не определено';
     String top3species = 'Не определено';
@@ -178,6 +182,7 @@ class LocalAnalysis {
         trunkRot: trunkRot,
         imagePath: outFile.path,
         analyzedAt: formattedDate,
+        geoData: geoData,
         isVerified: false,
       ),
     );
