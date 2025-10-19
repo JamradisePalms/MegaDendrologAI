@@ -150,9 +150,9 @@ def complex_filter(request, user_id="", filters="", page=0):
     '''
     if request.method == 'GET':
         filters = filters.split("&")
-        reports_per_page = 10
+        reports_per_page = 15
         if filters == [" "] or filters == ["%20"]:
-            event_info = Result.objects.filter(id__range=((page - 1) * reports_per_page + 1, page * reports_per_page)).order_by('id').reverse()
+            event_info = Result.objects.filter(user_id=user_id).order_by('id').reverse()[(page - 1) * reports_per_page:page * reports_per_page]
             event_info_serializer = EventInfoSerializer(event_info, many=True)
             return JsonResponse(event_info_serializer.data, safe=False)
 
@@ -186,7 +186,13 @@ def complex_filter(request, user_id="", filters="", page=0):
             return JsonResponse([], safe=False)
         event_info = event_info.order_by('id').reverse()[(page - 1) * reports_per_page:page * reports_per_page]
         event_info_serializer = EventInfoSerializer(event_info, many=True)
-        return JsonResponse(event_info_serializer.data, safe=False)
+        result = event_info_serializer.data
+        for i, el in enumerate(result):
+            if el["additionalInfo"] == "-":
+                del result[i]["additionalInfo"]
+            if el["gps"] == "-":
+                del result[i]["gps"]
+        return JsonResponse(result, safe=False)
 
 
 @api_view(['POST'])
@@ -216,7 +222,7 @@ def save_file(request, user_id=""):
             cropped_image_path = settings.MEDIA_ROOT
             yolo = os.path.abspath(os.path.join("api", "module", "best.onnx"))
             tree_type_classifier = os.path.abspath(os.path.join("api", "module", "APPLE_XS_TRANSFORMER_TREE_TYPE_WEB_DATA.onnx"))
-            multi_classifier = os.path.abspath(os.path.join("api", "module", "simple_model.onnx"))
+            multi_classifier = os.path.abspath(os.path.join("api", "module", "model.onnx"))
             model_response = main_onnx_1.run(image=image_path, 
                                              yolo=yolo, 
                                              tree_type_classifier=tree_type_classifier, 
@@ -239,7 +245,7 @@ def save_file(request, user_id=""):
                     d = datetime.datetime.now(tz=tz)
                     result.append({
                         "id": 0,
-                        "plantName": f"{el['classification']['tree_type']['class_label']}, {d.strftime('%d %m %Y, %H:%M')}",
+                        "plantName": f"{el['classification']['tree_type']['class_label']}, {d.strftime('%d-%m-%Y, %H:%M')}",
                         "probability": round(el["classification"]["tree_type"]["confidence"], 2),
                         "species": el["classification"]["tree_type"]["class_label"],
                         "trunkRot": el["classification"]["has_rot"]["class_label"],
@@ -251,6 +257,7 @@ def save_file(request, user_id=""):
                         "overallCondition": el["classification"]["overall_condition"]["class_label"],
                         "imageUrl": el["classification"]["photo_name"],
                         "gps": gps,
+                        "additionalInfo": "-",
                         "analyzedAt": d,
                         "isVerified": True
                     })
@@ -275,7 +282,13 @@ def save_file(request, user_id=""):
                 else:
                     print(event_info_serializer.errors, "<<<<<<<<<< ошибка сериализации")
                 result[i]["id"] = Result.objects.get(imageUrl=url).id
-            
+
+                if result[i]["additionalInfo"] == "-":
+                    del result[i]["additionalInfo"]
+
+                if result[i]["gps"] == "-":
+                    del result[i]["gps"]
+
             return JsonResponse(result, safe=False)
         
 

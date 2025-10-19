@@ -16,6 +16,7 @@ class Result(models.Model):
     overallCondition = models.CharField(max_length=500)
     imageUrl = models.CharField(max_length=500)
     gps = models.CharField(max_length=500)
+    additionalInfo = models.CharField(max_length=500)
     analyzedAt = models.DateTimeField(auto_now_add=True)
     isVerified = models.BooleanField()
 
