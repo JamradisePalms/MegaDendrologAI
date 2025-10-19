@@ -16,6 +16,7 @@ import locale
 import os
 
 from .module import main_onnx
+from .module import main_onnx_1
     
 
 @api_view(["GET"])
@@ -148,11 +149,17 @@ def complex_filter(request, user_id="", filters="", page=0):
         JsonResponse: JSON-массив записей в бд.
     '''
     if request.method == 'GET':
-        event_info = Result.objects.filter(id__range=((page - 1) * 10 , page * 10)).order_by('id')
         filters = filters.split("&")
+        reports_per_page = 15
         if filters == [" "] or filters == ["%20"]:
+            event_info = Result.objects.filter(user_id=user_id).order_by('id').reverse()[(page - 1) * reports_per_page:page * reports_per_page]
             event_info_serializer = EventInfoSerializer(event_info, many=True)
             return JsonResponse(event_info_serializer.data, safe=False)
+
+        if user_id != "gringo":
+            event_info = Result.objects.filter(user_id=user_id).order_by('id')
+        else:
+            event_info = Result.objects.all()
 
         for i in range(len(filters)):
             filters[i] = filters[i].split("=")
@@ -170,9 +177,22 @@ def complex_filter(request, user_id="", filters="", page=0):
                     value = bool(value)
                 except:
                     return JsonResponse("ValueError", safe=True)
+            if value == "1" or value == 1:
+                value = "Да"
+            elif value == "0" or value == 0:
+                value = "Нет"
             event_info = event_info.filter(**{key: value})
+        if (page - 1) * reports_per_page > len(event_info):
+            return JsonResponse([], safe=False)
+        event_info = event_info.order_by('id').reverse()[(page - 1) * reports_per_page:page * reports_per_page]
         event_info_serializer = EventInfoSerializer(event_info, many=True)
-        return JsonResponse(event_info_serializer.data, safe=False)
+        result = event_info_serializer.data
+        for i, el in enumerate(result):
+            if el["additionalInfo"] == "-":
+                del result[i]["additionalInfo"]
+            if el["gps"] == "-":
+                del result[i]["gps"]
+        return JsonResponse(result, safe=False)
 
 
 @api_view(['POST'])
@@ -189,22 +209,60 @@ def save_file(request, user_id=""):
     if request.method == "POST":
             data = {"id": 0, "user_id": user_id, "image": request.FILES['file'],
                     "uploaded_at": datetime.datetime.now(), "url": request.build_absolute_uri(settings.MEDIA_URL + str(request.FILES['file']))}
+            is_cropped_by_user = request.data["is_cropped_by_user"]
+            if is_cropped_by_user == "1":
+                is_cropped_by_user = True
+            else:
+                is_cropped_by_user = False
+            gps = request.data["gps"]
             photo_serializer = PhotoSerializer(data=data)
             if photo_serializer.is_valid():
                 photo_serializer.save()
             image_path = os.path.join(settings.MEDIA_ROOT, str(data["image"]))
-            yolo = os.path.abspath(os.path.join("api", "module", "best.onnx"))
-            tree_classifier = os.path.abspath(os.path.join("api", "module", "pablo.onnx"))
-            bad_things_classifier = os.path.abspath(os.path.join("api", "module", "everything_1.onnx"))
             cropped_image_path = settings.MEDIA_ROOT
-            tree_type_result = main_onnx.run(image=image_path, yolo=yolo, classifier=tree_classifier, cropped_image_path=cropped_image_path)
-            bad_things_result = main_onnx.run(image=image_path, yolo=yolo, classifier=bad_things_classifier, cropped_image_path=cropped_image_path)
+            yolo = os.path.abspath(os.path.join("api", "module", "best.onnx"))
+            tree_type_classifier = os.path.abspath(os.path.join("api", "module", "APPLE_XS_TRANSFORMER_TREE_TYPE_WEB_DATA.onnx"))
+            multi_classifier = os.path.abspath(os.path.join("api", "module", "model.onnx"))
+            model_response = main_onnx_1.run(image=image_path, 
+                                             yolo=yolo, 
+                                             tree_type_classifier=tree_type_classifier, 
+                                             multi_classifier=multi_classifier,
+                                             resize=320,
+                                             conf=0.2,
+                                             iou=0.45,
+                                             device="cpu",
+                                             vlm=None,
+                                             vlm_validate=True,
+                                             max_vlm_attempts=3,
+                                             is_cropped_by_user=is_cropped_by_user,
+                                             cropped_image_path=cropped_image_path)
+            
             result = []
-
-            for i in range(len(tree_type_result)):
-                bad_things_result[i]["plantName"] = f"{tree_type_result[i]}, {bad_things_result[i]['plantName']}"
-                bad_things_result[i]["species"] = tree_type_result[i]
-                result.append(bad_things_result[i].copy())
+            for el in model_response:
+                try:
+                    offset = datetime.timedelta(hours=3)
+                    tz = datetime.timezone(offset, name='МСК')
+                    d = datetime.datetime.now(tz=tz)
+                    result.append({
+                        "id": 0,
+                        "plantName": f"{el['classification']['tree_type']['class_label']}, {d.strftime('%d-%m-%Y, %H:%M')}",
+                        "probability": round(el["classification"]["tree_type"]["confidence"], 2),
+                        "species": el["classification"]["tree_type"]["class_label"],
+                        "trunkRot": el["classification"]["has_rot"]["class_label"],
+                        "trunkHoles": el["classification"]["has_hollow"]["class_label"],
+                        "trunkCracks": el["classification"]["has_cracks"]["class_label"],
+                        "trunkDamage": el["classification"]["has_trunk_damage"]["class_label"],
+                        "crownDamage": el["classification"]["has_crown_damage"]["class_label"],
+                        "fruitingBodies": el["classification"]["has_fruits_or_flowers"]["class_label"],
+                        "overallCondition": el["classification"]["overall_condition"]["class_label"],
+                        "imageUrl": el["classification"]["photo_name"],
+                        "gps": gps,
+                        "additionalInfo": "-",
+                        "analyzedAt": d,
+                        "isVerified": True
+                    })
+                except Exception as err:
+                    print(err, "<<<<<<<<<< ошибка в модели")
 
             for i, el in enumerate(result):
                 with open(os.path.join("photos", el["imageUrl"]), "rb") as f:
@@ -215,16 +273,22 @@ def save_file(request, user_id=""):
                         "uploaded_at": datetime.datetime.now(), "url": url}
                     photo_serializer = PhotoSerializer(data=data)
                     if photo_serializer.is_valid():
-                        photo_serializer.save() # сохраненеи вырезанного дерева
+                        photo_serializer.save()
                 event_info_data = el.copy()
                 event_info_data["user_id"] = user_id
                 event_info_serializer = EventInfoSerializer(data=event_info_data)
                 if event_info_serializer.is_valid():
                     event_info_serializer.save()
                 else:
-                    print(event_info_serializer.errors)
+                    print(event_info_serializer.errors, "<<<<<<<<<< ошибка сериализации")
                 result[i]["id"] = Result.objects.get(imageUrl=url).id
-            
+
+                if result[i]["additionalInfo"] == "-":
+                    del result[i]["additionalInfo"]
+
+                if result[i]["gps"] == "-":
+                    del result[i]["gps"]
+
             return JsonResponse(result, safe=False)
         
 

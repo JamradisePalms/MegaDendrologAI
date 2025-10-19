@@ -97,7 +97,7 @@ class Pipeline:
                 d = datetime.datetime.now()
                 answer.append({
                     "id": 0,
-                    "plantName": d.strftime("%d %B %Y года, %H:%M"),
+                    "plantName": d.strftime("%d %m %Y, %H:%M"),
                     "probability": round(el["detection_confidence"] * 100),
                     "species": " ",
                     "trunkRot": el["classification"]["has_rot"]["class_id"],
@@ -108,7 +108,7 @@ class Pipeline:
                     "fruitingBodies": el["classification"]["has_fruits_or_flowers"]["class_id"],
                     "overallCondition": el["classification"]["overall_condition"]["class_id"],
                     "imageUrl": el["photo_name"],
-                    "imagePath": "no",
+                    "gps": "kashirskoye shosse, 31",
                     "analyzedAt": d,
                     "isVerified": True
                 })
