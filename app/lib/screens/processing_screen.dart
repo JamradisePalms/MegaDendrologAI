@@ -96,14 +96,17 @@ class _ProcessingScreenState extends State<ProcessingScreen> {
     }
 
       // 4. Сохраняем в кэш все отчёты
-      final reportService = ReportService();
-      for (final r in reports) {
-        debugPrint('Сохраняем отчёт: ${r.debugString()}');
-        final reportId = await reportService.saveReport(r);
-        if (!internetAvailable) {
-          await queueDao.addTask(savedImage.path, reportId);
+      if (!internetAvailable){
+        final reportService = ReportService();
+        for (final r in reports) {
+          debugPrint('Сохраняем отчёт: ${r.debugString()}');
+          final reportId = await reportService.saveReport(r);
+          if (!internetAvailable) {
+            await queueDao.addTask(savedImage.path, reportId);
+          }
         }
       }
+      
 
       if (!internetAvailable) {
         await AnalysisQueueDao().debugPrintQueue();

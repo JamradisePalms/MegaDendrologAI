@@ -27,27 +27,46 @@ class LocalAnalysis {
     if (_initialized) return;
 
     final List<String> treeClassNames = [
-      'He определено', 'Береза', 'Боярышник', 'Вяз', 'Дерен белый',
-      'Дуб', 'Ель', 'Ива', 'Карагана древовидная', 'Кизильник',
-      'Клен остролистный', 'Клен ясенелистный', 'Лапчатка кустарниковая',
-      'Лещина', 'Липа', 'Лиственница', 'Осина', 'Пузыреплодник калинолистный',
-      'Роза морщинистая', 'Роза собачья', 'Рябина', 'Сирень обыкновенная',
-      'Сосна', 'Спирея', 'Туя', 'Чубушник', 'Ясень'
+      'Береза',
+      'Боярышник',
+      'Вяз',
+      'Дерен Белый',
+      'Дуб',
+      'Ель',
+      'Ива',
+      'Карагана древовидная',
+      'Кизильник',
+      'Клен',
+      'Лапчатка Кустарниковая',
+      'Лещина',
+      'Липа',
+      'Лиственница',
+      'Осина',
+      'Пузыреплодник калинолистный',
+      'Роза Морщинистая',
+      'Рябина',
+      'Сирень Обыкновенная',
+      'Сосна',
+      'Спирея',
+      'Туя',
+      'Чубушник',
+      'Ясень'
     ];
+
 
     _detector = await YoloV11Detector.create(
       classNames: ["tree", "bush"], // ⚠️ Замени своими классами
-      modelAsset: "assets/models/best_float32.tflite",
+      modelAsset: "assets/models/detector.tflite",
     );
 
     _resnetClassifier = ResnetClassifier();
     await _resnetClassifier.init(
-      modelAsset: 'assets/models/simple_model_float32.tflite',
+      modelAsset: 'assets/models/classifier_trees.tflite',
       classNames: treeClassNames,
     );
     _resnetClassifierManyTargets = ResnetClassifierManyTargets();
     await _resnetClassifierManyTargets.init(
-      modelAsset: 'assets/models/resnet_many_targets2.tflite',
+      modelAsset: 'assets/models/classifier_many_targets.tflite',
     );
 
     _initialized = true;

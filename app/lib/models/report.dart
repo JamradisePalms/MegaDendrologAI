@@ -71,7 +71,7 @@ class Report {
       imagePath: json['imagePath']?.toString(),
       analyzedAt: json['analyzedAt']?.toString(),
       isVerified: json['isVerified'],
-      geoData: json['geoData']?.toString(), // добавляем из JSON
+      geoData: json['gps']?.toString(), // добавляем из JSON
     );
   }
 
@@ -87,17 +87,18 @@ class Report {
       if (trunkDamage != null) 'trunkDamage': trunkDamage,
       if (crownDamage != null) 'crownDamage': crownDamage,
       if (fruitingBodies != null) 'fruitingBodies': fruitingBodies,
-      if (diseases != null) 'diseases': diseases,
-      if (dryBranchPercentage != null) 'dryBranchPercentage': dryBranchPercentage,
-      if (additionalInfo != null) 'additionalInfo': additionalInfo,
+      'diseases': diseases ?? '-',
+      'dryBranchPercentage': dryBranchPercentage ?? '-',
+      'additionalInfo': additionalInfo ?? '-',
       if (overallCondition != null) 'overallCondition': overallCondition,
       if (imageUrl != null) 'imageUrl': imageUrl,
       if (imagePath != null) 'imagePath': imagePath,
       if (analyzedAt != null) 'analyzedAt': analyzedAt,
       if (isVerified != null) 'isVerified': isVerified,
-      if (geoData != null) 'geoData': geoData,
+      'gps': geoData ?? '-',
     };
   }
+
 
   String debugString() {
     return '''

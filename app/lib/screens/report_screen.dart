@@ -6,6 +6,7 @@ import 'crop_screen.dart';
 import 'package:flutter/foundation.dart'; // для consolidateHttpClientResponseBytes
 import 'package:path_provider/path_provider.dart'; // для getTemporaryDirectory
 import '../services/report_service.dart';
+import '../services/api_service.dart';
 class ReportScreen extends StatefulWidget {
   final List<Report> reports;
 
@@ -161,6 +162,24 @@ class _ReportScreenState extends State<ReportScreen> {
 
 Widget _buildTable(Report report) {
   final reportService = ReportService();
+  final _apiService = ApiService();
+
+
+  Future<void> _saveReport(Report report) async {
+    final hasInternet = await ConnectivityService.hasInternet();
+    if (hasInternet) {
+      try {
+        await _apiService.sendReportUpdate(report);
+        debugPrint('✅ Отчёт успешно отправлен на сервер');
+      } catch (e) {
+        debugPrint('⚠️ Ошибка отправки на сервер: $e');
+        await reportService.saveReport(report);
+      }
+    } else {
+      await reportService.saveReport(report);
+      debugPrint('💾 Отчёт сохранён локально (нет интернета)');
+    }
+  }
 
   return Padding(
     padding: const EdgeInsets.all(16.0),
@@ -185,15 +204,17 @@ Widget _buildTable(Report report) {
               value: report.plantName,
               onSave: (newValue) async {
                 report.plantName = newValue;
-                await reportService.saveReport(report);
+                await _saveReport(report);
               },
             ),
             _buildEditableRowGeneric(
               label: 'Вероятность детекции растения',
-              value: report.probability?.toString(),
+              value: report.probability != null
+                  ? '${report.probability!.toString()}%'
+                  : '0%',
               onSave: (newValue) async {
                 report.probability = double.tryParse(newValue) ?? 0;
-                await reportService.saveReport(report);
+                await _saveReport(report);
               },
             ),
             _buildEditableRowGeneric(
@@ -201,7 +222,7 @@ Widget _buildTable(Report report) {
               value: report.overallCondition,
               onSave: (newValue) async {
                 report.overallCondition = newValue;
-                await reportService.saveReport(report);
+                await _saveReport(report);
               },
             ),
             _buildEditableRowGeneric(
@@ -209,7 +230,7 @@ Widget _buildTable(Report report) {
               value: report.species,
               onSave: (newValue) async {
                 report.species = newValue;
-                await reportService.saveReport(report);
+                await _saveReport(report);
               },
             ),
             _buildEditableRowGeneric(
@@ -217,7 +238,7 @@ Widget _buildTable(Report report) {
               value: report.trunkRot,
               onSave: (newValue) async {
                 report.trunkRot = newValue;
-                await reportService.saveReport(report);
+                await _saveReport(report);
               },
             ),
             _buildEditableRowGeneric(
@@ -225,7 +246,7 @@ Widget _buildTable(Report report) {
               value: report.trunkHoles,
               onSave: (newValue) async {
                 report.trunkHoles = newValue;
-                await reportService.saveReport(report);
+                await _saveReport(report);
               },
             ),
             _buildEditableRowGeneric(
@@ -233,7 +254,7 @@ Widget _buildTable(Report report) {
               value: report.trunkCracks,
               onSave: (newValue) async {
                 report.trunkCracks = newValue;
-                await reportService.saveReport(report);
+                await _saveReport(report);
               },
             ),
             _buildEditableRowGeneric(
@@ -241,7 +262,7 @@ Widget _buildTable(Report report) {
               value: report.trunkDamage,
               onSave: (newValue) async {
                 report.trunkDamage = newValue;
-                await reportService.saveReport(report);
+                await _saveReport(report);
               },
             ),
             _buildEditableRowGeneric(
@@ -249,7 +270,7 @@ Widget _buildTable(Report report) {
               value: report.crownDamage,
               onSave: (newValue) async {
                 report.crownDamage = newValue;
-                await reportService.saveReport(report);
+                await _saveReport(report);
               },
             ),
             _buildEditableRowGeneric(
@@ -257,7 +278,7 @@ Widget _buildTable(Report report) {
               value: report.fruitingBodies,
               onSave: (newValue) async {
                 report.fruitingBodies = newValue;
-                await reportService.saveReport(report);
+                await _saveReport(report);
               },
             ),
             _buildEditableRowGeneric(
@@ -265,7 +286,7 @@ Widget _buildTable(Report report) {
               value: report.diseases,
               onSave: (newValue) async {
                 report.diseases = newValue;
-                await reportService.saveReport(report);
+                await _saveReport(report);
               },
             ),
             _buildEditableRowGeneric(
@@ -273,7 +294,7 @@ Widget _buildTable(Report report) {
               value: report.dryBranchPercentage?.toString(),
               onSave: (newValue) async {
                 report.dryBranchPercentage = double.tryParse(newValue) ?? 0;
-                await reportService.saveReport(report);
+                await _saveReport(report);
               },
             ),
             _buildEditableRowGeneric(
@@ -281,7 +302,7 @@ Widget _buildTable(Report report) {
               value: report.geoData,
               onSave: (newValue) async {
                 report.geoData = newValue;
-                await reportService.saveReport(report);
+                await _saveReport(report);
               },
             ),
             _buildEditableRowGeneric(
@@ -289,7 +310,7 @@ Widget _buildTable(Report report) {
               value: report.additionalInfo,
               onSave: (newValue) async {
                 report.additionalInfo = newValue;
-                await reportService.saveReport(report);
+                await _saveReport(report);
               },
             ),
           ],
@@ -298,6 +319,7 @@ Widget _buildTable(Report report) {
     ),
   );
 }
+
 
 
 

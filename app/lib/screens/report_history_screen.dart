@@ -3,7 +3,7 @@ import '../models/report.dart';
 import '../screens/report_screen.dart';
 import '../services/report_service.dart';
 import '../services/api_service.dart';
-import 'dart:io'; // для File
+import 'dart:io';
 import '../services/connectivity_service.dart';
 
 class ReportHistoryScreen extends StatefulWidget {
@@ -39,7 +39,7 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
     'trunkCracks': 'Трещины',
     'trunkDamage': 'Повреждение ствола',
     'crownDamage': 'Повреждение кроны',
-    'fruitingBodies': 'Плодовые тела грибов',
+    'fruitingBodies': 'Плодовые тела',
     'diseases': 'Болезни',
   };
 
@@ -246,14 +246,32 @@ class _ReportHistoryScreenState extends State<ReportHistoryScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('История отчетов'),
+        title: const Text('История отчетов'),
+        leadingWidth: 120, // расширяем место под две кнопки
+        leading: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              onPressed: () => Navigator.pop(context),
+            ),
+            IconButton(
+              icon: const Icon(Icons.refresh, color: Colors.white),
+              onPressed: () async {
+                await _loadReports(page: 1);
+              },
+            ),
+          ],
+        ),
         actions: [
           IconButton(
-            icon: Icon(Icons.filter_list),
-            onPressed: _openFilters, // открываем фильтры
+            icon: const Icon(Icons.filter_list, color: Colors.white),
+            onPressed: _openFilters,
           ),
         ],
       ),
+
+
       body: Column(
         children: [
           Expanded(

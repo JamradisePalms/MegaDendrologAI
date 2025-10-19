@@ -24,11 +24,13 @@ class ApiService {
         imageFile.path,
         contentType: MediaType('image', 'png'),
       ));
-
+      debugPrint('request geodata: $geoData');
+      debugPrint('request isCroppedByUser: $isCroppedByUser');
       // Добавляем флаг (1 = true, 0 = false)
       request.fields['is_cropped_by_user'] = isCroppedByUser ? '1' : '0';
+      request.fields['gps'] = geoData ?? '-';
 
-      debugPrint('Отправка запроса: is_cropped_by_user=${request.fields['is_cropped_by_user']}');
+      debugPrint('Отправка запроса: ${request} ');
 
       // Отправляем запрос
       final streamedResponse = await request.send();
@@ -105,6 +107,39 @@ class ApiService {
       throw Exception('Не удалось получить отчеты: $e');
     }
   }
+
+  Future<bool> sendReportUpdate(Report report) async {
+    try {
+      final uri = Uri.parse('http://89.169.189.195:8080/edit/gringo');
+
+      final Map<String, dynamic> reportJson = report.toJson();
+      final body = jsonEncode(reportJson);
+
+      debugPrint('=== Отправка отчета (PUT) ===');
+      debugPrint('URL: $uri');
+      debugPrint('Тело запроса: $body');
+
+      final response = await http.put(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: body,
+      );
+
+      debugPrint('Ответ сервера (${response.statusCode}): ${response.body}');
+
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        debugPrint('Ошибка при обновлении отчета: ${response.statusCode}');
+        return false;
+      }
+    } catch (e) {
+      debugPrint('❌ Ошибка при обновлении отчета: $e');
+      return false;
+    }
+  }
+
+
 
 
 }

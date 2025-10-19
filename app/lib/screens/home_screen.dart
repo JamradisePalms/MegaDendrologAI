@@ -7,7 +7,7 @@ import 'processing_screen.dart';
 import 'package:plant_analyzer/screens/report_history_screen.dart';
 import 'crop_screen.dart';
 import 'package:geolocator/geolocator.dart';
-
+import '../services/analysis_queue_dao.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -18,6 +18,8 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final ImagePicker _picker = ImagePicker();
+  final _queueDao = AnalysisQueueDao();
+
   bool _isProcessing = false;
 
   /// Выбор изображения на Android (галерея)
@@ -51,6 +53,63 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Future<void> _pickMultipleImagesAndQueue() async {
+    try {
+      setState(() => _isProcessing = true);
+
+      List<File> imageFiles = [];
+
+      if (Platform.isAndroid) {
+        final List<XFile>? pickedFiles = await _picker.pickMultiImage(imageQuality: 85);
+        if (pickedFiles != null && pickedFiles.isNotEmpty) {
+          imageFiles = pickedFiles.map((x) => File(x.path)).toList();
+        }
+      } else if (Platform.isWindows) {
+        final result = await FilePicker.platform.pickFiles(
+          allowMultiple: true,
+          type: FileType.image,
+        );
+        if (result != null && result.files.isNotEmpty) {
+          imageFiles = result.paths.whereType<String>().map((p) => File(p)).toList();
+        }
+      }
+
+      if (imageFiles.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Файлы не выбраны')),
+          );
+        }
+        return;
+      }
+
+      // 🚀 Добавляем все выбранные фото в очередь
+      for (final file in imageFiles) {
+        await _queueDao.addTask(
+          file.path,
+          0, // reportId пока можно ставить 0, если еще не создан
+          onlyOnWifi: false,
+        );
+      }
+
+      await _queueDao.debugPrintQueue();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Добавлено в очередь: ${imageFiles.length} файлов. Результаты появятся в истории отчётов.')),
+        );
+      }
+    } catch (e) {
+      debugPrint('Ошибка при загрузке массива фото: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ошибка: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isProcessing = false);
+    }
+  }
     Future<void> _takePhoto() async {
     if (kIsWeb || !Platform.isAndroid) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -110,6 +169,8 @@ class _HomeScreenState extends State<HomeScreen> {
       if (mounted) setState(() => _isProcessing = false);
     }
   }
+  
+
 
   /// Получение текущей позиции устройства через Geolocator
   Future<Position?> _getCurrentPosition() async {
@@ -161,85 +222,141 @@ class _HomeScreenState extends State<HomeScreen> {
 
 
 
-  @override
-  Widget build(BuildContext context) {
-    bool isAndroid = !kIsWeb && Platform.isAndroid;
-    bool isWindows = !kIsWeb && Platform.isWindows;
+@override
+Widget build(BuildContext context) {
+  bool isAndroid = !kIsWeb && Platform.isAndroid;
+  bool isWindows = !kIsWeb && Platform.isWindows;
 
-    const double buttonSpacing = 6; // универсальный отступ между кнопками
+  const double iconSize = 36;
+  const double buttonWidth = 90;
+  const double buttonHeight = 90;
 
-    return Scaffold(
-      appBar: AppBar(
-        leading: Padding(
-          padding: const EdgeInsets.all(8.0), // чтобы иконка не прилипала к краю
-          child: Image.asset(
-            'assets/images/icon_white.png',
-            width: 24,
-            height: 24,
-            fit: BoxFit.contain,
+  Widget buildActionButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback? onPressed,
+  }) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          width: buttonWidth,
+          height: buttonHeight,
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              padding: const EdgeInsets.all(8),
+              backgroundColor: Theme.of(context).colorScheme.primary,
+            ),
+            onPressed: onPressed,
+            child: Icon(icon, size: iconSize, color: Colors.white),
           ),
         ),
-        title: const Text('PlantGuard'),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-
-            if (isAndroid)
-              ElevatedButton(
-                onPressed: _isProcessing ? null : _takePhoto,
-                child: _isProcessing
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Text('Сделать фото'),
-              ),
-
-            if (isAndroid) SizedBox(height: buttonSpacing),
-
-            if (isAndroid || isWindows)
-              ElevatedButton(
-                onPressed: _isProcessing
-                    ? null
-                    : () async {
-                        setState(() => _isProcessing = true);
-                        try {
-                          final file = await _pickImage();
-                          if (file != null && mounted) {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => ProcessingScreen(imageFile: file),
-                              ),
-                            );
-                          } else {
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Файл не выбран')),
-                              );
-                            }
-                          }
-                        } finally {
-                          if (mounted) setState(() => _isProcessing = false);
-                        }
-                      },
-                child: const Text('Выбрать фото с устройства'),
-              ),
-
-            SizedBox(height: buttonSpacing),
-
-            ElevatedButton(
-              onPressed: () => _openHistory(context),
-              child: const Text('История отчетов'),
-            ),
-          ],
+        const SizedBox(height: 6),
+        SizedBox(
+          width: buttonWidth + 15,
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            softWrap: true,
+            maxLines: 4,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 14),
+          ),
         ),
-      ),
-
+      ],
     );
   }
+
+  return Scaffold(
+    appBar: AppBar(
+      leading: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Image.asset(
+          'assets/images/icon_white.png',
+          width: 24,
+          height: 24,
+          fit: BoxFit.contain,
+        ),
+      ),
+      title: const Text('PlantGuard'),
+    ),
+
+    // 📍 Центрируем ряд кнопок по вертикали
+    body: Center(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          buildActionButton(
+            icon: Icons.image,
+            label: 'Выбрать фото для анализа',
+            onPressed: _isProcessing
+                ? null
+                : () async {
+                    setState(() => _isProcessing = true);
+                    try {
+                      final file = await _pickImage();
+                      if (file != null && mounted) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => CropScreen(imageFile: file),
+                          ),
+                        );
+                      } else {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Файл не выбран')),
+                          );
+                        }
+                      }
+                    } finally {
+                      if (mounted) setState(() => _isProcessing = false);
+                    }
+                  },
+          ),
+          const SizedBox(width: 20),
+          buildActionButton(
+            icon: Icons.collections,
+            label: 'Загрузить несколько фото в очередь',
+            onPressed: _isProcessing ? null : _pickMultipleImagesAndQueue,
+          ),
+          const SizedBox(width: 20),
+          buildActionButton(
+            icon: Icons.history,
+            label: 'История отчетов',
+            onPressed: () => _openHistory(context),
+          ),
+        ],
+      ),
+    ),
+
+    // 📸 Нижняя круглая кнопка
+    floatingActionButton: isAndroid
+        ? FloatingActionButton(
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            onPressed: _isProcessing ? null : _takePhoto,
+            child: _isProcessing
+                ? const SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2.5,
+                    ),
+                  )
+                : const Icon(Icons.camera_alt, color: Colors.white, size: 32),
+          )
+        : null,
+    floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+  );
+}
+
+
+
+
 
 }

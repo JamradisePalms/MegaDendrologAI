@@ -139,7 +139,8 @@ class ResnetClassifier {
 
     final logits = output[0].cast<double>();
     final probs = softmax(logits);
-
+    debugPrint('probabilities: $probs');
+    debugPrint('classes: ${_classNames}');
     // собираем в map
     final Map<String, double> results = {};
     for (int i = 0; i < _classNames.length; i++) {
