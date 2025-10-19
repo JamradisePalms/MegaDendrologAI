@@ -75,13 +75,14 @@ model.train()
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 print(f"Using device: {device}")
 
-def create_loss_weights(weights_list):
-    return torch.tensor(weights_list, dtype=torch.float32).to(device)
+criterions  = {}
 
-criterions = {
-    task_name: FocalLoss(gamma=2.0)
-    for task_name in task_names
-}
+for task_name in task_names:
+    if task_name == 'dry_branch_percentage':
+        weights = torch.tensor([1.074, 14.557], dtype=torch.float, device=device)
+        criterions[task_name] = FocalLoss(gamma=2.0, class_weights=weights)
+    else:
+        criterions[task_name] = FocalLoss(gamma=2.0)
 
 # criterions['tree_type'] = nn.CrossEntropyLoss(weight=torch.tensor([np.float64(0.694229112833764), np.float64(0.1139383658467628), np.float64(7.462962962962963), np.float64(3.7314814814814814), np.float64(9.950617283950617), np.float64(0.35537918871252205), np.float64(2.9851851851851854), np.float64(2.2962962962962963), np.float64(4.9753086419753085), np.float64(9.950617283950617), np.float64(0.2985185185185185), np.float64(0.23691945914168136), np.float64(4.9753086419753085), np.float64(9.950617283950617), np.float64(0.8292181069958847), np.float64(9.950617283950617), np.float64(1.6584362139917694), np.float64(3.316872427983539), np.float64(3.7314814814814814), np.float64(3.316872427983539), np.float64(4.264550264550264), np.float64(7.462962962962963), np.float64(2.4876543209876543), np.float64(7.462962962962963), np.float64(7.462962962962963), np.float64(4.264550264550264), np.float64(2.132275132275132)], dtype=torch.float32).to(device))
 

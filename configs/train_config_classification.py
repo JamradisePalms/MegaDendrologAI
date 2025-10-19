@@ -122,8 +122,8 @@ class TrainConfigs:
     class TreeClassificationWithMobileTransformer:
         MODEL_NAME = 'mobilevit_xs'  # mobilevit_xs, efficientformer_l1, poolformer_s12
         BACKBONE_TYPE = 'mobile_transformer'
-        TRAIN_JSON_FILEPATH = Path(r"C:\Users\shari\PycharmProjects\MegaDendrologAI\train_data.json")
-        VAL_JSON_FILEPATH = Path(r"C:\Users\shari\PycharmProjects\MegaDendrologAI\valid_data.json")
+        TRAIN_JSON_FILEPATH = Path(r"C:\Users\shari\PycharmProjects\MegaDendrologAI\MULTI_CLASS_DRY_TRAIN.json")
+        VAL_JSON_FILEPATH = Path(r"C:\Users\shari\PycharmProjects\MegaDendrologAI\MULTI_CLASS_DRY_VAL.json")
         METRIC = "task_losses"
         
         IMAGE_JSON_FIELD = "image"
@@ -133,7 +133,7 @@ class TrainConfigs:
             "has_cracks": 2,
             "has_fruits_or_flowers": 2,
             "overall_condition": 6,
-            # "dry_branch_percentage": 4,
+            "dry_branch_percentage": 2,
             "has_crown_damage": 2,
             "has_trunk_damage": 2,
             "has_rot": 2
@@ -151,13 +151,13 @@ class TrainConfigs:
         }
 
         BATCH_SIZE = 10
-        NUM_EPOCHS = 60
+        NUM_EPOCHS = 50
         LR = 1e-4
         
-        PATIENCE = 20
+        PATIENCE = 10
         MIN_DELTA = 0.002
         
-        PATH_TO_SAVE_MODEL = Path('ML/Classification/results/saved_models/APPLE_XS_TRANSFORMER_ALL_CLASSES.pth')
+        PATH_TO_SAVE_MODEL = Path('ML/Classification/results/saved_models/APPLE_XS_WITH_DRY.pth')
 
         @classmethod
         def get_image_processor(cls):
