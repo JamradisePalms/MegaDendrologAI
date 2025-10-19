@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 from typing import Dict, List, Union, Optional
-from ML.Classification.torch_lib.BackBones import ResNetBackbone, EfficientNetBackbone, MobileTransformerBackbone, SwinBackbone, DeiTBackbone
+from ML.Classification.torch_lib.BackBones import ResNetBackbone, EfficientNetBackbone, MobileTransformerBackbone,  SwinBackbone, DeiTBackbone
 
 class MultiHeadCNNWrapper(nn.Module):
     def __init__(

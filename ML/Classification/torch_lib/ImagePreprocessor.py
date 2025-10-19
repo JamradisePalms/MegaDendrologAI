@@ -3,6 +3,7 @@ import numpy as np
 from PIL import Image
 import torchvision.transforms as transforms
 import torch
+import transformers
 from transformers import AutoImageProcessor, MobileViTImageProcessor
 from torchvision.models import (
     EfficientNet_B0_Weights,
@@ -10,7 +11,6 @@ from torchvision.models import (
     EfficientNet_B3_Weights,
     EfficientNet_B4_Weights,
 )
-from typing import Optional
 
 
 class TreeImagePreprocessor:
@@ -186,7 +186,7 @@ class TreeImagePreprocessor:
         """Apply base_transform and return torch.Tensor [C, H, W]."""
         if self._is_hf_processor:
             result = self.base_transform(images=image, return_tensors="pt")
-            if isinstance(result, dict) and "pixel_values" in result:
+            if isinstance(result, transformers.image_processing_base.BatchFeature) and "pixel_values" in result:
                 pix = result["pixel_values"]
                 if isinstance(pix, torch.Tensor):
                     return pix.squeeze(0)  # [1,C,H,W] -> [C,H,W]

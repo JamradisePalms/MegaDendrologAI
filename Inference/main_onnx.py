@@ -123,8 +123,8 @@ class Pipeline:
             x1, y1, x2, y2 = map(int, xy)
             conf_val = float(box.conf.item()) if hasattr(box.conf, "item") else float(box.conf)
             photo_name = f"img_{datetime.datetime.now()}.png"
-            # crop = image[y1:y2, x1:x2]
-            # cv2.imwrite(os.path.join(self.cropped_image_path, photo_name), crop)
+            crop = image[y1:y2, x1:x2]
+            cv2.imwrite(os.path.join(self.cropped_image_path, photo_name), crop)
             detection_list.append({"bbox": [x1, y1, x2, y2], "confidence": conf_val, "photo_name": photo_name})
 
         state["detection_json"] = {"detections": detection_list}

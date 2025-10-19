@@ -67,8 +67,8 @@ class TrainConfigs:
     class TreeClassificationModelWithMultiHeadMLP():
         MODEL_NAME = 'microsoft/resnet-18'
         BACKBONE_TYPE = 'resnet'
-        TRAIN_JSON_FILEPATH = Path(r"C:\Users\shari\PycharmProjects\MegaDendrologAI\ML\Classification\new_data\train_data.json")
-        VAL_JSON_FILEPATH = Path(r"C:\Users\shari\PycharmProjects\MegaDendrologAI\ML\Classification\new_data\valid_data.json")
+        TRAIN_JSON_FILEPATH = Path(r"C:\Users\shari\PycharmProjects\MegaDendrologAI\NEW_DATA_TRAIN.json")
+        VAL_JSON_FILEPATH = Path(r"C:\Users\shari\PycharmProjects\MegaDendrologAI\NEW_DATA_VAL.json")
         METRIC = "task_losses"
 
         PATIENCE = 15
@@ -76,14 +76,14 @@ class TrainConfigs:
         
         IMAGE_JSON_FIELD = "image"
         TARGET_JSON_FIELD = {
-            "tree_type": 27,
-            # "has_hollow": 2,
-            # "has_cracks": 2,
-            # "has_fruits_or_flowers": 2,
-            # "overall_condition": 6,
-            # "has_crown_damage": 2,
-            # "has_trunk_damage": 2,
-            # "has_rot": 2
+            # "tree_type": 24,
+            "has_hollow": 2,
+            "has_cracks": 2,
+            "has_fruits_or_flowers": 2,
+            "overall_condition": 6,
+            "has_crown_damage": 2,
+            "has_trunk_damage": 2,
+            "has_rot": 2
         }
 
         LOSS_WEIGHTS = {
@@ -97,10 +97,14 @@ class TrainConfigs:
             # "has_rot": 0.15
         }
 
-        BATCH_SIZE = 32
-        NUM_EPOCHS = 100
+        BATCH_SIZE = 50
+        NUM_EPOCHS = 50
         LR = 1e-4
-        PATH_TO_SAVE_MODEL = Path('ML/Classification/results/saved_models/multi_head_tree_classification.pth')
+
+        PATIENCE = 20
+        MIN_DELTA = 0.002
+
+        PATH_TO_SAVE_MODEL = Path('ML/Classification/results/saved_models/RESNET_TREE_TYPE_MODEL.pth')
 
         @classmethod
         def get_image_processor(cls):
@@ -118,21 +122,21 @@ class TrainConfigs:
     class TreeClassificationWithMobileTransformer:
         MODEL_NAME = 'mobilevit_xs'  # mobilevit_xs, efficientformer_l1, poolformer_s12
         BACKBONE_TYPE = 'mobile_transformer'
-        TRAIN_JSON_FILEPATH = Path(r"C:\Users\shari\PycharmProjects\MegaDendrologAI\NEW_DATA_TRAIN.json")
-        VAL_JSON_FILEPATH = Path(r"C:\Users\shari\PycharmProjects\MegaDendrologAI\NEW_DATA_VAL.json")
+        TRAIN_JSON_FILEPATH = Path(r"C:\Users\shari\PycharmProjects\MegaDendrologAI\train_data.json")
+        VAL_JSON_FILEPATH = Path(r"C:\Users\shari\PycharmProjects\MegaDendrologAI\valid_data.json")
         METRIC = "task_losses"
         
         IMAGE_JSON_FIELD = "image"
         TARGET_JSON_FIELD = {
-            "tree_type": 24,
-            # "has_hollow": 2,
-            # "has_cracks": 2,
-            # "has_fruits_or_flowers": 2,
-            # "overall_condition": 6,
-            # # "dry_branch_percentage": 4,
-            # "has_crown_damage": 2,
-            # "has_trunk_damage": 2,
-            # "has_rot": 2
+            # "tree_type": 24,
+            "has_hollow": 2,
+            "has_cracks": 2,
+            "has_fruits_or_flowers": 2,
+            "overall_condition": 6,
+            # "dry_branch_percentage": 4,
+            "has_crown_damage": 2,
+            "has_trunk_damage": 2,
+            "has_rot": 2
         }
 
         LOSS_WEIGHTS = {
@@ -147,13 +151,13 @@ class TrainConfigs:
         }
 
         BATCH_SIZE = 10
-        NUM_EPOCHS = 100
+        NUM_EPOCHS = 60
         LR = 1e-4
         
         PATIENCE = 20
         MIN_DELTA = 0.002
         
-        PATH_TO_SAVE_MODEL = Path('ML/Classification/results/saved_models/APPLE_XS_TRANSFORMER_TREE_TYPE_WEB_DATA.pth')
+        PATH_TO_SAVE_MODEL = Path('ML/Classification/results/saved_models/APPLE_XS_TRANSFORMER_ALL_CLASSES.pth')
 
         @classmethod
         def get_image_processor(cls):

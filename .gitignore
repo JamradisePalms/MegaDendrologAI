@@ -83,6 +83,8 @@ desktop.ini
 tmp*
 *.json
 *.onnx
+results
+.tfliteenv
 
 # -----------------------
 # Logs
@@ -91,6 +93,9 @@ tmp*
 logs/
 log/
 *.out
+*.webp
+*.jpeg
+*.jfif
 
 # -----------------------
 # Project specific datasets / outputs
