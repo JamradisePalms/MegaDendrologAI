@@ -194,6 +194,7 @@ class Pipeline:
                     "confidence": confidence
                 }
                 classification_result["photo_name"] = det["photo_name"]
+                classification_result["tree_type"]["confidence"] = det["confidence"] * 100
 
             results_out.append({
                 "classification": classification_result
