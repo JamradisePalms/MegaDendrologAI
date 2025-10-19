@@ -234,10 +234,12 @@ def save_file(request, user_id=""):
             result = []
             for el in model_response:
                 try:
-                    d = datetime.datetime.now()
+                    offset = datetime.timedelta(hours=3)
+                    tz = datetime.timezone(offset, name='МСК')
+                    d = datetime.datetime.now(tz=tz)
                     result.append({
                         "id": 0,
-                        "plantName": f"{el['classification']['tree_type']['class_label']} {d.strftime('%d %m %Y, %H:%M')}",
+                        "plantName": f"{el['classification']['tree_type']['class_label']}, {d.strftime('%d %m %Y, %H:%M')}",
                         "probability": round(el["classification"]["tree_type"]["confidence"], 2),
                         "species": el["classification"]["tree_type"]["class_label"],
                         "trunkRot": el["classification"]["has_rot"]["class_label"],
