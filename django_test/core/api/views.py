@@ -213,34 +213,29 @@ def save_file(request, user_id=""):
             if photo_serializer.is_valid():
                 photo_serializer.save()
             image_path = os.path.join(settings.MEDIA_ROOT, str(data["image"]))
-            yolo = os.path.abspath(os.path.join("api", "module", "best.onnx"))
-            tree_classifier = os.path.abspath(os.path.join("api", "module", "pablo.onnx"))
-            bad_things_classifier = os.path.abspath(os.path.join("api", "module", "everything_1.onnx"))
             cropped_image_path = settings.MEDIA_ROOT
-            tree_type_result = main_onnx.run(image=image_path, yolo=yolo, classifier=tree_classifier, cropped_image_path=cropped_image_path)
-            bad_things_result = main_onnx.run(image=image_path, yolo=yolo, classifier=bad_things_classifier, cropped_image_path=cropped_image_path)
-
+            yolo = os.path.abspath(os.path.join("api", "module", "best.onnx"))
             tree_type_classifier = os.path.abspath(os.path.join("api", "module", "APPLE_XS_TRANSFORMER_TREE_TYPE_WEB_DATA.onnx"))
             multi_classifier = os.path.abspath(os.path.join("api", "module", "simple_model.onnx"))
-            test = main_onnx_1.run(image=image_path, 
-                                       yolo=yolo, 
-                                       tree_type_classifier=tree_type_classifier, 
-                                       multi_classifier=multi_classifier,
-                                       resize=320,
-                                       conf=0.2,
-                                       iou=0.45,
-                                       device="cpu",
-                                       vlm=None,
-                                       vlm_validate=True,
-                                       max_vlm_attempts=3,
-                                       is_cropped_by_user=is_cropped_by_user,
-                                       cropped_image_path=cropped_image_path)
+            model_response = main_onnx_1.run(image=image_path, 
+                                             yolo=yolo, 
+                                             tree_type_classifier=tree_type_classifier, 
+                                             multi_classifier=multi_classifier,
+                                             resize=320,
+                                             conf=0.2,
+                                             iou=0.45,
+                                             device="cpu",
+                                             vlm=None,
+                                             vlm_validate=True,
+                                             max_vlm_attempts=3,
+                                             is_cropped_by_user=is_cropped_by_user,
+                                             cropped_image_path=cropped_image_path)
             
-            answer = []
-            for el in test:
+            result = []
+            for el in model_response:
                 try:
                     d = datetime.datetime.now()
-                    answer.append({
+                    result.append({
                         "id": 0,
                         "plantName": f"{el['classification']['tree_type']['class_label']} {d.strftime('%d %m %Y, %H:%M')}",
                         "probability": round(el["classification"]["tree_type"]["confidence"], 2),
@@ -257,16 +252,8 @@ def save_file(request, user_id=""):
                         "analyzedAt": d,
                         "isVerified": True
                     })
-                except:
-                    print(el)
-
-            result = []
-            result = answer.copy()
-
-#            for i in range(len(tree_type_result)):
-#                bad_things_result[i]["plantName"] = f"{tree_type_result[i]}, {bad_things_result[i]['plantName']}"
-#                bad_things_result[i]["species"] = tree_type_result[i]
-#                result.append(bad_things_result[i].copy())
+                except Exception as err:
+                    print(err, "<<<<<<<<<< ошибка в модели")
 
             for i, el in enumerate(result):
                 with open(os.path.join("photos", el["imageUrl"]), "rb") as f:
@@ -277,14 +264,14 @@ def save_file(request, user_id=""):
                         "uploaded_at": datetime.datetime.now(), "url": url}
                     photo_serializer = PhotoSerializer(data=data)
                     if photo_serializer.is_valid():
-                        photo_serializer.save() # сохраненеи вырезанного дерева
+                        photo_serializer.save()
                 event_info_data = el.copy()
                 event_info_data["user_id"] = user_id
                 event_info_serializer = EventInfoSerializer(data=event_info_data)
                 if event_info_serializer.is_valid():
                     event_info_serializer.save()
                 else:
-                    print(event_info_serializer.errors, "<<<<<<<<<<<<<<<<<<<<<<<<<")
+                    print(event_info_serializer.errors, "<<<<<<<<<< ошибка сериализации")
                 result[i]["id"] = Result.objects.get(imageUrl=url).id
             
             return JsonResponse(result, safe=False)

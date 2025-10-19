@@ -57,13 +57,13 @@ mapping_dict = {
    21: 'Туя',
    22: 'Чубушник',
    23: 'Ясень'},
-    'has_hollow': {0: 'No', 1: 'Yes'},
-    'has_cracks': {0: 'No', 1: 'Yes'},
-    'has_fruits_or_flowers': {0: 'No', 1: 'Yes'},
-    'has_rot': {0: 'No', 1: 'Yes'},
-    'has_trunk_damage': {0: 'No', 1: 'Yes'},
-    'has_crown_damage': {0: 'No', 1: 'Yes'},
-    'dry_branch_percentage': {0: 'Normal', 1: 'Dry', 2: 'Very Dry', 3: 'Extremely Dry'},
+    'has_hollow': {0: 'Нет', 1: 'Да'},
+    'has_cracks': {0: 'Нет', 1: 'Да'},
+    'has_fruits_or_flowers': {0: 'Нет', 1: 'Да'},
+    'has_rot': {0: 'Нет', 1: 'Да'},
+    'has_trunk_damage': {0: 'Нет', 1: 'Да'},
+    'has_crown_damage': {0: 'Нет', 1: 'Да'},
+    'dry_branch_percentage': {0: 'Нормальное', 1: 'Сухо', 2: 'Очень сухо', 3: 'Воды больше нет'},
     'overall_condition': {0: '',  1: 'Аварийное', 2: 'Нездоровое', 3: 'Нормальное', 4: 'Опасное', 5: 'Хорошее'}
 }
 
